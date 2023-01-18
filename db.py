@@ -27,6 +27,7 @@ class DB:
         query = "INSERT INTO {0} {1} VALUES {2};".format(table,columns,data)
         self.cursor.execute(query)
         self.db.commit()
+        return self.cursor.lastrowid
 
     def get(self, table, column, condition = None):
         if condition == None:
@@ -43,6 +44,11 @@ class DB:
             query = "SELECT {0} FROM {1} WHERE {2};".format(column,table,condition)
         self.cursor.execute(query)
         return self.cursor.fetchall()
+
+    def update(self, table, column, data, condition):
+        query = "UPDATE {0} SET {1} = '{2}' WHERE {3};".format(table,column,data,condition)
+        self.cursor.execute(query)
+        self.db.commit()        
 
     def dict_factory(self, cursor, row):
         d = {}

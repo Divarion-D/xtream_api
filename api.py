@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 import time
 import uvicorn
 import json
@@ -6,6 +7,7 @@ import iptv
 from db import DB
 import common
 from typing import Union
+from utils.streamer import Streamer
 
 db = DB()
 
@@ -34,6 +36,12 @@ async def api(username: str, password: str, action: Union[str, None] = None):
             return {"live_streams": setting["live_streams"]}
         elif action == "get_live_streams":
             return iptv_data.get_all_channels()
+
+@app.get("/live/{username}/{password}/{stream_id}.ts")
+async def live(username: str, password: str, stream_id: str, request: Request):
+
+    url = iptv_data.get_channel_url(stream_id)
+    return StreamingResponse(Streamer.receive_stream(url), media_type="video/mp2t")
 
 if __name__ == "__main__":
     ip = input("Enter ip (default: 127.0.1.1): ")

@@ -54,7 +54,8 @@ class M3U_Parser():
 
                 if not db.get("iptv_channels", "name", "name = '{0}'".format(data_list["name"])):
                     category_id = db.get("iptv_categories", "category_id", "category_name = '{0}'".format(data_list["group_title"]))["category_id"]
-                    db.insert("iptv_channels", ("name", "stream_type", "direct_source", "stream_icon", "epg_channel_id", "category_id"), (data_list["name"], "live", data_list["url"], data_list["stream_icon"], data_list["epg_channel_id"], category_id))
+                    insert_id = db.insert("iptv_channels", ("name", "stream_type", "direct_source", "stream_icon", "epg_channel_id", "category_id"), (data_list["name"], "live", data_list["url"], data_list["stream_icon"], data_list["epg_channel_id"], category_id))
+                    db.update("iptv_channels", "stream_id", insert_id-1, "channel_id = {0}".format(insert_id))
                 data_list = {}
 
     def get_all_categories(self):
@@ -74,7 +75,7 @@ class M3U_Parser():
                 "num": channel["channel_id"],
                 "name": channel["name"],
                 "stream_type": channel["stream_type"],
-                "stream_id": int(channel["channel_id"])-1,
+                "stream_id": channel["stream_id"],
                 "stream_icon": channel["stream_icon"],
                 "epg_channel_id": channel["epg_channel_id"],
                 "added": None,
@@ -84,4 +85,10 @@ class M3U_Parser():
                 "tv_archive_duration": channel["tv_archive_duration"]
             })
         return channels
+
+    def get_channel_url(self, stream_id):
+        db.open()
+        channel = db.get("iptv_channels", "direct_source", "stream_id = {0}".format(stream_id))
+        db.close()
+        return channel["direct_source"]
         
