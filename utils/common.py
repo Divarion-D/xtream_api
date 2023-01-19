@@ -1,7 +1,6 @@
 import time
 
 
-
 def auth(username, password):
     user_info = {}
     user_info["username"] = username
