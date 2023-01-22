@@ -2,10 +2,11 @@ from typing import Union
 
 import uvicorn
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 
 import utils.common as common
 import utils.iptv as iptv
+import utils.user as user
 from utils.db import DB
 from utils.streamer import Streamer
 
@@ -15,15 +16,27 @@ db.open()
 db.add_tables()
 
 
+if db.get("users", "is_admin", 1) == None:
+    print("Admin account not found")
+    admin_username = input("Enter admin username: ")
+    admin_password = input("Enter admin password: ")
+    user.create_admin(admin_username, admin_password)
+
+db.close()
+
 iptv_data = iptv.M3U_Parser(common.SETTING["iptv"]["list_url"])
 
 app = FastAPI()
+
+# API XTREAM-CODES
+############################################################################################################
 
 
 @app.get("/player_api.php")
 async def api(username: str, password: str, action: Union[str, None] = None):
     if username != None and password != None and action == None:
-        return common.auth(username, password)
+        user_data = user.auth(username, password)
+        return {"user_info": user.user_info_xtream(user_data, username, password), "server_info": common.server_info()}
 
     if action != None:
         if action == "get_live_categories":
@@ -36,7 +49,7 @@ async def api(username: str, password: str, action: Union[str, None] = None):
             return iptv_data.get_all_channels()
 
 
-@app.get("/live/{username}/{password}/{stream_id}.ts")
+@app.get("/live/{username}/{password}/{stream_id}.{ext}")
 async def live(username: str, password: str, stream_id: str, request: Request, response: Response):
     print(request.client)
     url = iptv_data.get_channel_url(stream_id)
@@ -60,6 +73,22 @@ async def epg(username: str, password: str):
     file = open("epg.xml", "rb")
     return StreamingResponse(file, media_type="application/xml")
 
+# API ADMIN
+############################################################################################################
+
+@app.get("/admin_auth")
+async def admin_auth(username: str, password: str):
+    status = user.auth(username, password)
+    if status["error"] == 0:
+        hash = common.gen_hash(20)
+        db.open()
+        db.update("users", "auth_hash", hash, "username='{0}'".format(username))
+        db.close()
+        response = JSONResponse(content={"status":200})
+        response.set_cookie(key="auth", value=hash)
+        return response
+    else:
+        return {"status":status["error_code"], "error_info":status["error_message"]}
 
 if __name__ == "__main__":
     import utils.common as common

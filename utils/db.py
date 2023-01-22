@@ -26,6 +26,9 @@ class DB:
         # create table iptv_epg
         self.cursor.execute(
             '''CREATE TABLE IF NOT EXISTS iptv_epg ("epg_id" INTEGER PRIMARY KEY AUTOINCREMENT, "channel_id" INTEGER)''')
+        #create table users
+        self.cursor.execute(
+            '''CREATE TABLE IF NOT EXISTS users ("user_id" INTEGER PRIMARY KEY AUTOINCREMENT, "username" TEXT, "password" TEXT, "email" TEXT, "is_admin" INTEGER DEFAULT 0, "is_trial" INTEGER DEFAULT 0, "status" TEXT, "exp_date" TEXT, "max_connections" INTEGER DEFAULT 1, "created_at" INTEGER DEFAULT 0, "active_cons" INTEGER DEFAULT 0, "allowed_output_formats" TEXT, "auth_hash" TEXT)''')
 
     def insert(self, table, columns, data):
         query = "INSERT INTO {0} {1} VALUES {2};".format(table, columns, data)

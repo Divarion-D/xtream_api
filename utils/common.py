@@ -1,25 +1,16 @@
-import time
 import json
+import random
+import string
+import time
+
 import utils.common as common
 
 # read setting.json
 with open("setting.json", "r") as f:
     SETTING = json.load(f)
 
-def auth(username, password):
-    user_info = {}
-    user_info["username"] = username
-    user_info["password"] = password
-    user_info["message"] = "ok"
-    user_info["auth"] = 1
-    user_info["status"] = "Active"
-    user_info["exp_date"] = "Unlimited"
-    user_info["is_trial"] = "0"
-    user_info["active_cons"] = "0"
-    user_info["created_at"] = "0"
-    user_info["max_connections"] = "1"
-    user_info["allowed_output_formats"] = ["m3u8", "ts"]
 
+def server_info():
     server_info = {}
     server_info["url"] = f"http://{common.SETTING['server']['ip']}:{common.SETTING['server']['port']}"
     server_info["port"] = str(common.SETTING['server']['port'])
@@ -30,5 +21,9 @@ def auth(username, password):
     server_info["time_now"] = time.strftime(
         "%Y-%m-%d, %H:%M:%S", time.localtime())
     server_info["timezone"] = ""
+    return server_info
 
-    return {"user_info": user_info, "server_info": server_info}
+
+def gen_hash(length=32):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(length))
