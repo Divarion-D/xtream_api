@@ -1,5 +1,17 @@
 {
+    "server":{
+        "port": 8000,
+        "ip": "127.0.1.1"
+    },
     "iptv":{
-        "list_url":""
+        "list_url":"http://portal.ruiptv.ru/group.m3u",
+        "epg_list_in": [
+            "https://iptvx.one/epg/epg.xml.gz",
+            "http://epg.it999.ru/epg2.xml.gz",
+            "http://epg.iptvx.tv/xmltv.xml.gz"
+        ],
+        "epg_list_out": "epg.xml.gz",
+        "upd_interval_list": 86400,
+        "upd_interval_epg": 86400
     }
 }

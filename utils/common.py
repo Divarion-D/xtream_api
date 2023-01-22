@@ -1,5 +1,10 @@
 import time
+import json
+import utils.common as common
 
+# read setting.json
+with open("setting.json", "r") as f:
+    SETTING = json.load(f)
 
 def auth(username, password):
     user_info = {}
@@ -16,8 +21,8 @@ def auth(username, password):
     user_info["allowed_output_formats"] = ["m3u8", "ts"]
 
     server_info = {}
-    server_info["url"] = "http://192.168.0.100:8000"
-    server_info["port"] = "8000"
+    server_info["url"] = f"http://{common.SETTING['server']['ip']}:{common.SETTING['server']['port']}"
+    server_info["port"] = str(common.SETTING['server']['port'])
     server_info["https_port"] = "8000"
     server_info["rtmp_port"] = "8000"
     server_info["server_protocol"] = "http"

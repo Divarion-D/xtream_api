@@ -33,6 +33,16 @@ class DB:
         self.db.commit()
         return self.cursor.lastrowid
 
+    def delete(self, table, condition):
+        query = "DELETE FROM {0} WHERE {1};".format(table, condition)
+        self.cursor.execute(query)
+        self.db.commit()
+
+    def delete_all(self, table):
+        query = "DELETE FROM {0};".format(table)
+        self.cursor.execute(query)
+        self.db.commit()
+
     def get(self, table, column, condition=None):
         if condition == None:
             query = "SELECT {0} FROM {1};".format(column, table)

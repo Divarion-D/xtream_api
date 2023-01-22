@@ -3,7 +3,8 @@ import time
 
 import requests
 
-from db import DB
+import utils.common as common
+from utils.db import DB
 
 db = DB()
 
@@ -15,7 +16,11 @@ class M3U_Parser():
         db.open()
         channels_lupd = db.get_setting("chenel_lupd")
         channels_lupd = int(channels_lupd) if channels_lupd != '' else 0
-        if channels_lupd < int(time.time()) - 86400:
+        if channels_lupd < int(time.time()) - common.SETTING["iptv"]["upd_interval_list"]:
+            # clear channels
+            db.delete_all("iptv_channels")
+            # clear categories
+            db.delete_all("iptv_categories")
             self.parse_m3u()
             db.set_setting("chenel_lupd", int(time.time()))
         db.close()
@@ -31,13 +36,13 @@ class M3U_Parser():
             if line.startswith('#EXTINF:'):
                 cnl = 1
                 data_list["stream_icon"] = re.search(
-                    'tvg-logo="(.+?)"', line).group(1) if 'tvg-logo' in line else ""
+                    'tvg-logo="(.+?)"', line).group(1).strip() if 'tvg-logo' in line else ""
                 data_list["name"] = re.search('tvg-name="(.+?)"', line).group(
-                    1) if 'tvg-name' in line else re.search(',(.+)', line).group(1)
+                    1).strip() if 'tvg-name' in line else re.search(',(.+)', line).group(1).strip()
                 data_list["group_title"] = re.search(
-                    'group-title="(.+?)"', line).group(1) if 'group-title' in line else ""
+                    'group-title="(.+?)"', line).group(1).strip() if 'group-title' in line else ""
                 data_list["epg_channel_id"] = re.search(
-                    'tvg-id="(.+?)"', line).group(1) if 'tvg-id' in line else ""
+                    'tvg-id="(.+?)"', line).group(1).strip() if 'tvg-id' in line else ""
                 #data_list["tvg_shift"] = re.search('tvg-shift="(.+?)"', line).group(1) if 'tvg-shift' in line else None
                 #data_list["tvg_url"] = re.search('tvg-url="(.+?)"', line).group(1) if 'tvg-url' in line else None
                 #data_list["tvg_rec"] = re.search('tvg-rec="(.+?)"', line).group(1) if 'tvg-rec' in line else None
@@ -51,7 +56,7 @@ class M3U_Parser():
                 data_list["url"] = line
                 cnl = 0
 
-            if cnl == 0:
+            if cnl == 0 and data_list:
                 # remove '
                 data_list["name"] = data_list["name"].replace("'", "")
 

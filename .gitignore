@@ -216,3 +216,5 @@ venv.bak/
 *.db
 
 
+utils/xmltv.py
+epg.xml
