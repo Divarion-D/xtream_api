@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 import utils.common as common
 import utils.iptv as iptv
 import utils.user as user
+import utils.video as video
 from utils.db import *
 from utils.streamer import Streamer
 
@@ -55,11 +56,31 @@ async def api(username: str, password: str, action: Union[str, None] = None):
         if action == "get_live_categories":
             return iptv_data.get_all_categories()
         elif action == "get_vod_categories":
-            return {"live_streams": "ok"}
+            return video.get_all_categories()
         elif action == "get_series_categories":
             return {"live_streams": "ok"}
         elif action == "get_live_streams":
             return iptv_data.get_all_channels()
+        elif action == "get_vod_streams":
+            return [
+                {
+                    "num": 1,
+                    "name": "\u042f \u043a\u0440\u0430\u0441\u043d\u0435\u044e",
+                    "title": "\u042f \u043a\u0440\u0430\u0441\u043d\u0435\u044e",
+                    "year": "",
+                    "stream_type": "movie",
+                    "stream_id": 4,
+                    "stream_icon": "https:\/\/www.themoviedb.org\/t\/p\/w600_and_h900_bestv2\/1pCx1fyB4w0tCtuhTFfMxqhiHZa.jpg",
+                    "rating": 12,
+                    "rating_5based": 6,
+                    "added": "1660638664",
+                    "category_id": "4",
+                    "category_ids": [4],
+                    "container_extension": "mp4",
+                    "custom_sid": "",
+                    "direct_source": "http:\/\/176.124.192.118:80\/play\/DXMkxo_35hRPoig0TFWxfkASgpnTIHPuFfKUMmcmUOI",
+                }
+            ]
 
 
 @app.get("/live/{username}/{password}/{stream_id}.{ext}")

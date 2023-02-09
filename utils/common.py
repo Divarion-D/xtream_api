@@ -17,7 +17,7 @@ def add_tables():
     # create table settings
     qb.reset()  # reset query builder
     qb.query(
-        """CREATE TABLE IF NOT EXISTS settings ("setting_id" INTEGER PRIMARY KEY AUTOINCREMENT, "name" TEXT, "value" TEXT)"""
+        """CREATE TABLE IF NOT EXISTS settings ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "name" TEXT, "value" TEXT)"""
     )
     # create table iptv_categories
     qb.reset()  # reset query builder
@@ -39,6 +39,11 @@ def add_tables():
     qb.query(
         """CREATE TABLE IF NOT EXISTS users ("user_id" INTEGER PRIMARY KEY AUTOINCREMENT, "username" TEXT, "password" TEXT, "email" TEXT, "is_admin" INTEGER DEFAULT 0, "is_trial" INTEGER DEFAULT 0, "status" TEXT, "exp_date" TEXT, "max_connections" INTEGER DEFAULT 1, "created_at" INTEGER DEFAULT 0, "active_cons" INTEGER DEFAULT 0, "allowed_output_formats" TEXT, "auth_hash" TEXT)"""
     )
+    # create table video_categories
+    qb.reset()  # reset query builder
+    qb.query(
+        """CREATE TABLE IF NOT EXISTS video_categories ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "name" TEXT, "parent_id" INTEGER)"""
+    )
 
 
 def server_info():
@@ -57,6 +62,12 @@ def server_info():
 
 
 def gen_hash(length=32):
+    """
+    It generates a random string of length 32, using only lowercase letters
+    
+    :param length: The length of the hash, defaults to 32 (optional)
+    :return: A string of random lowercase letters of length 32.
+    """
     letters = string.ascii_lowercase
     return "".join(random.choice(letters) for i in range(length))
 

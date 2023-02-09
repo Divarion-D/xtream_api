@@ -30,6 +30,9 @@ class M3U_Parser:
         return requests.get(self.m3u_url).text.splitlines()
 
     def parse_m3u(self):
+        """
+        It parses an M3U file and inserts the data into a database
+        """
         print("Parsing M3U file...")
         data_list = {}
         cnl = 1
@@ -115,10 +118,20 @@ class M3U_Parser:
                 data_list = {}
 
     def get_all_categories(self):
+        """
+        It returns all the categories from the database
+        :return: A list of all the categories in the database.
+        """
         categories = qb.select("iptv_categories").all()
         return categories
 
     def get_all_channels(self):
+        """
+        It returns a list of dictionaries, each dictionary containing the following keys: num, name,
+        stream_type, stream_id, stream_icon, epg_channel_id, added, category_id, tv_archive,
+        direct_source, tv_archive_duration
+        :return: A list of dictionaries.
+        """
         data = qb.select("iptv_channels").all()
 
         channels = []
@@ -141,6 +154,13 @@ class M3U_Parser:
         return channels
 
     def get_channel_url(self, stream_id):
+        """
+        It takes a stream_id as an argument, and returns the direct_source of the channel with that
+        stream_id
+        
+        :param stream_id: The stream ID of the channel you want to get the URL for
+        :return: A dictionary with the key "direct_source" and the value of the channel url.
+        """
         channel = (
             qb.select("iptv_channels").where([["stream_id", "=", stream_id]]).one()
         )
