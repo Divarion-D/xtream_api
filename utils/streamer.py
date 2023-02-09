@@ -2,6 +2,7 @@ from httpx import AsyncClient
 
 
 class Streamer:
+
     @staticmethod
     async def receive_file(url):
         async with AsyncClient(follow_redirects=True) as client:

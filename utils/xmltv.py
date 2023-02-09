@@ -40,6 +40,7 @@ def set_attrs(dict, elem, attrs):
         if attr in elem.keys():
             dict[attr] = elem.get(attr)
 
+
 def set_boolean(dict, name, elem):
     """
     set_boolean(dict, name, elem) -> None
@@ -53,6 +54,7 @@ def set_boolean(dict, name, elem):
             dict[name] = True
         elif node.text.lower() == 'no':
             dict[name] = False
+
 
 def append_text(dict, name, elem, with_lang=True):
     """
@@ -69,6 +71,7 @@ def append_text(dict, name, elem, with_lang=True):
         else:
             dict[name].append(node.text)
 
+
 def set_text(dict, name, elem, with_lang=True):
     """
     set_text(dict, name, elem, with_lang=True) -> None
@@ -82,6 +85,7 @@ def set_text(dict, name, elem, with_lang=True):
             dict[name] = (node.text, node.get('lang', ''))
         else:
             dict[name] = node.text
+
 
 def append_icons(dict, elem):
     """
@@ -103,13 +107,13 @@ def elem_to_channel(elem):
 
     Convert channel element to dictionary
     """
-    d = {'id': elem.get('id'),
-         'display-name': []}
+    d = {'id': elem.get('id'), 'display-name': []}
     append_text(d, 'display-name', elem)
     append_icons(d, elem)
     append_text(d, 'url', elem, with_lang=False)
 
     return d
+
 
 def read_channels(fp=None, tree=None):
     """
@@ -130,9 +134,11 @@ def elem_to_programme(elem):
 
     Convert programme element to dictionary
     """
-    d = {'start': elem.get('start'),
-         'channel': elem.get('channel'),
-         'title': []}
+    d = {
+        'start': elem.get('start'),
+        'channel': elem.get('channel'),
+        'title': []
+    }
 
     set_attrs(d, elem, ('stop', 'pdc-start', 'vps-start', 'showview',
                         'videoplus', 'clumpidx'))
@@ -158,8 +164,7 @@ def elem_to_programme(elem):
 
     lennode = elem.find('length')
     if lennode is not None:
-        lend = {'units': lennode.get('units'),
-                'length': lennode.text}
+        lend = {'units': lennode.get('units'), 'length': lennode.text}
         d['length'] = lend
 
     append_icons(d, elem)
@@ -169,8 +174,8 @@ def elem_to_programme(elem):
     for epnumnode in elem.findall('episode-num'):
         if not 'episode-num' in d:
             d['episode-num'] = []
-        d['episode-num'].append((epnumnode.text,
-                                 epnumnode.get('system', 'xmltv_ns')))
+        d['episode-num'].append(
+            (epnumnode.text, epnumnode.get('system', 'xmltv_ns')))
 
     vidnode = elem.find('video')
     if vidnode is not None:
@@ -208,7 +213,7 @@ def elem_to_programme(elem):
         if not 'subtitles' in d:
             d['subtitles'] = []
         std = {}
-        set_attrs(std, stnode, ('type',))
+        set_attrs(std, stnode, ('type', ))
         set_text(std, 'language', stnode)
         d['subtitles'].append(std)
 
@@ -216,7 +221,7 @@ def elem_to_programme(elem):
         if not 'rating' in d:
             d['rating'] = []
         ratd = {}
-        set_attrs(ratd, ratnode, ('system',))
+        set_attrs(ratd, ratnode, ('system', ))
         set_text(ratd, 'value', ratnode, with_lang=False)
         append_icons(ratd, ratnode)
         d['rating'].append(ratd)
@@ -225,7 +230,7 @@ def elem_to_programme(elem):
         if not 'star-rating' in d:
             d['star-rating'] = []
         srd = {}
-        set_attrs(srd, srnode, ('system',))
+        set_attrs(srd, srnode, ('system', ))
         set_text(srd, 'value', srnode, with_lang=False)
         append_icons(srd, srnode)
         d['star-rating'].append(srd)
@@ -234,11 +239,16 @@ def elem_to_programme(elem):
         if not 'review' in d:
             d['review'] = []
         rd = {}
-        set_attrs(rd, revnode, ('type', 'source', 'reviewer',))
+        set_attrs(rd, revnode, (
+            'type',
+            'source',
+            'reviewer',
+        ))
         set_text(rd, 'value', revnode, with_lang=False)
         d['review'].append(rd)
 
     return d
+
 
 def read_programmes(fp=None, tree=None):
     """
@@ -265,9 +275,9 @@ def read_data(fp=None, tree=None):
         tree = et.parse(fp)
 
     d = {}
-    set_attrs(d, tree, ('date', 'source-info-url', 'source-info-name',
-                        'source-data-url', 'generator-info-name',
-                        'generator-info-url'))
+    set_attrs(d, tree,
+              ('date', 'source-info-url', 'source-info-name',
+               'source-data-url', 'generator-info-name', 'generator-info-url'))
     return d
 
 
@@ -275,14 +285,14 @@ def indent(elem, level=0):
     """
     Indent XML for pretty printing
     """
-    i = "\n" + level*"  "
+    i = "\n" + level * "  "
     if len(elem):
         if not elem.text or not elem.text.strip():
             elem.text = i + "  "
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
-            indent(elem, level+1)
+            indent(elem, level + 1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
     else:
@@ -297,9 +307,14 @@ class Writer:
     **All strings passed to this class must be Unicode, except for dictionary
     keys**
     """
-    def __init__(self, encoding="UTF-8", date=None,
-                 source_info_url=None, source_info_name=None,
-                 generator_info_url=None, generator_info_name=None):
+
+    def __init__(self,
+                 encoding="UTF-8",
+                 date=None,
+                 source_info_url=None,
+                 source_info_name=None,
+                 generator_info_url=None,
+                 generator_info_name=None):
         """
         Arguments:
 
@@ -323,11 +338,13 @@ class Writer:
 
         """
         self.encoding = encoding
-        self.data = {'date': date,
-                     'source_info_url': source_info_url,
-                     'source_info_name': source_info_name,
-                     'generator_info_url': generator_info_url,
-                     'generator_info_name': generator_info_name}
+        self.data = {
+            'date': date,
+            'source_info_url': source_info_url,
+            'source_info_name': source_info_name,
+            'generator_info_url': generator_info_url,
+            'generator_info_name': generator_info_name
+        }
 
         self.root = Element('tv')
         for attr in self.data.keys():
@@ -375,7 +392,6 @@ class Writer:
                 if attr in icon:
                     self.setattr(i, attr, icon[attr])
 
-
     def set_zero_ormore(self, programme, element, p):
         """
         set_zero_ormore(programme, element, p) -> None
@@ -399,7 +415,6 @@ class Writer:
             e = SubElement(p, element)
             self.settext(e, programme[element])
 
-
     def addProgramme(self, programme):
         """
         Add a single XMLTV 'programme'
@@ -415,9 +430,11 @@ class Writer:
             if attr in programme:
                 self.setattr(p, attr, programme[attr])
             else:
-                raise ValueError("'programme' must contain '%s' attribute" % attr)
+                raise ValueError("'programme' must contain '%s' attribute" %
+                                 attr)
 
-        for attr in ('stop', 'pdc-start', 'vps-start', 'showview', 'videoplus', 'clumpidx'):
+        for attr in ('stop', 'pdc-start', 'vps-start', 'showview', 'videoplus',
+                     'clumpidx'):
             if attr in programme:
                 self.setattr(p, attr, programme[attr])
 
@@ -483,7 +500,9 @@ class Writer:
             for videlem in ('aspect', 'quality'):
                 if videlem in programme['video']:
                     v = SubElement(e, videlem)
-                    self.settext(v, programme['video'][videlem], with_lang=False)
+                    self.settext(v,
+                                 programme['video'][videlem],
+                                 with_lang=False)
             for attr in ('present', 'colour'):
                 if attr in programme['video']:
                     a = SubElement(e, attr)
@@ -600,13 +619,13 @@ class Writer:
         et = ElementTree(self.root)
         et.write(file, self.encoding, xml_declaration=True)
 
+
 if __name__ == '__main__':
-# Tests
+    # Tests
     from io import StringIO
 
     # An example file
-    xmldata = StringIO(
-        """<?xml version="1.0" encoding="iso-8859-1"?>
+    xmldata = StringIO("""<?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE tv SYSTEM "xmltv.dtd">
 <tv date="20030811003608 -0300" source-info-url="http://www.funktronics.ca/python-xmltv" source-info-name="Funktronics" generator-info-name="python-xmltv" generator-info-url="http://www.funktronics.ca/python-xmltv">
   <channel id="C10eltv.zap2it.com">
@@ -680,56 +699,104 @@ if __name__ == '__main__':
     print(read_programmes(xmldata))
 
     # Test the writer
-    programmes = [{'audio': {'stereo': u'stereo'},
-                   'category': [(u'Biz', u''), (u'Fin', u'')],
-                   'channel': u'C23robtv.zap2it.com',
-                   'date': u'2003',
-                   'start': u'20030702000000 ADT',
-                   'stop': u'20030702003000 ADT',
-                   'title': [(u'This Week in Business', u'')]},
-                  {'audio': {'stereo': u'stereo'},
-                   'category': [(u'Comedy', u'')],
-                   'channel': u'C36wuhf.zap2it.com',
-                   'country': [(u'USA', u'')],
-                   'credits': {'producer': [u'Larry David'], 'actor': [u'Jerry Seinfeld']},
-                   'date': u'1995',
-                   'desc': [(u'In an effort to grow up, George proposes marriage to former girlfriend Susan.',
-                             u'')],
-                   'episode-num': [(u'7 . 1 . 1/1', u'xmltv_ns')],
-                   'language': (u'English', u''),
-                   'last-chance': (u'Hah!', u''),
-                   'length': {'units': u'minutes', 'length': '22'},
-                   'new': True,
-                   'orig-language': (u'English', u''),
-                   'premiere': (u'Not really. Just testing', u'en'),
-                   'previously-shown': {'channel': u'C12whdh.zap2it.com',
-                                        'start': u'19950921103000 ADT'},
-                   'rating': [{'icon': [{'height': u'64',
-                                         'src': u'http://some.ratings/PGicon.png',
-                                         'width': u'64'}],
-                               'system': u'VCHIP',
-                               'value': u'PG'}],
-                   'review': [{'type': 'url', 'value': 'http://some.review/'}],
-                   'star-rating': [{'icon': [{'height': u'32',
-                                             'src': u'http://some.star/icon.png',
-                                             'width': u'32'}],
-                                   'value': u'4/5'}],
-                   'start': u'20030702000000 ADT',
-                   'stop': u'20030702003000 ADT',
-                   'sub-title': [(u'The Engagement', u'')],
-                   'subtitles': [{'type': u'teletext', 'language': (u'English', u'')}],
-                   'title': [(u'Seinfeld', u'')],
-                   'url': [(u'http://www.nbc.com/')],
-                   'video': {'colour': True, 'aspect': u'4:3', 'present': True,
-                             'quality': 'standard'}}]
+    programmes = [{
+        'audio': {
+            'stereo': u'stereo'
+        },
+        'category': [(u'Biz', u''), (u'Fin', u'')],
+        'channel': u'C23robtv.zap2it.com',
+        'date': u'2003',
+        'start': u'20030702000000 ADT',
+        'stop': u'20030702003000 ADT',
+        'title': [(u'This Week in Business', u'')]
+    }, {
+        'audio': {
+            'stereo': u'stereo'
+        },
+        'category': [(u'Comedy', u'')],
+        'channel':
+        u'C36wuhf.zap2it.com',
+        'country': [(u'USA', u'')],
+        'credits': {
+            'producer': [u'Larry David'],
+            'actor': [u'Jerry Seinfeld']
+        },
+        'date':
+        u'1995',
+        'desc':
+        [(u'In an effort to grow up, George proposes marriage to former girlfriend Susan.',
+          u'')],
+        'episode-num': [(u'7 . 1 . 1/1', u'xmltv_ns')],
+        'language': (u'English', u''),
+        'last-chance': (u'Hah!', u''),
+        'length': {
+            'units': u'minutes',
+            'length': '22'
+        },
+        'new':
+        True,
+        'orig-language': (u'English', u''),
+        'premiere': (u'Not really. Just testing', u'en'),
+        'previously-shown': {
+            'channel': u'C12whdh.zap2it.com',
+            'start': u'19950921103000 ADT'
+        },
+        'rating': [{
+            'icon': [{
+                'height': u'64',
+                'src': u'http://some.ratings/PGicon.png',
+                'width': u'64'
+            }],
+            'system':
+            u'VCHIP',
+            'value':
+            u'PG'
+        }],
+        'review': [{
+            'type': 'url',
+            'value': 'http://some.review/'
+        }],
+        'star-rating': [{
+            'icon': [{
+                'height': u'32',
+                'src': u'http://some.star/icon.png',
+                'width': u'32'
+            }],
+            'value':
+            u'4/5'
+        }],
+        'start':
+        u'20030702000000 ADT',
+        'stop':
+        u'20030702003000 ADT',
+        'sub-title': [(u'The Engagement', u'')],
+        'subtitles': [{
+            'type': u'teletext',
+            'language': (u'English', u'')
+        }],
+        'title': [(u'Seinfeld', u'')],
+        'url': [(u'http://www.nbc.com/')],
+        'video': {
+            'colour': True,
+            'aspect': u'4:3',
+            'present': True,
+            'quality': 'standard'
+        }
+    }]
 
-    channels = [{'display-name': [(u'Channel 10 ELTV', u'')],
-                 'id': u'C10eltv.zap2it.com',
-                 'url': [u'http://www.eastlink.ca/']},
-                {'display-name': [(u'Channel 11 CBHT', u'en')],
-                 'icon': [{'src': u'http://tvlistings2.zap2it.com/tms_network_logos/cbc.gif'}],
-                 'id': u'C11cbht.zap2it.com'}]
-
+    channels = [{
+        'display-name': [(u'Channel 10 ELTV', u'')],
+        'id': u'C10eltv.zap2it.com',
+        'url': [u'http://www.eastlink.ca/']
+    }, {
+        'display-name': [(u'Channel 11 CBHT', u'en')],
+        'icon': [{
+            'src':
+            u'http://tvlistings2.zap2it.com/tms_network_logos/cbc.gif'
+        }],
+        'id':
+        u'C11cbht.zap2it.com'
+    }]
 
     w = Writer(encoding="us-ascii",
                date="20030811003608 -0300",
