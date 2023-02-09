@@ -1,8 +1,8 @@
 from typing import Union
 
 import uvicorn
-from fastapi import FastAPI, Request, Response, HTTPException
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import JSONResponse, StreamingResponse
 
 import utils.common as common
 import utils.iptv as iptv
@@ -63,17 +63,18 @@ async def api(username: str, password: str, action: Union[str, None] = None):
 
 
 @app.get("/live/{username}/{password}/{stream_id}.{ext}")
-async def live(username: str, password: str, stream_id: str, request: Request,
-               response: Response):
+async def live(
+    username: str, password: str, stream_id: str, request: Request, response: Response
+):
     user_data = user.auth(username, password)
     if user_data["error"] == 1:
         # return status code
-        raise HTTPException(status_code=user_data["error_code"],
-                            detail=f"{user_data['error_message']}")
+        raise HTTPException(
+            status_code=user_data["error_code"], detail=f"{user_data['error_message']}"
+        )
 
     url = iptv_data.get_channel_url(stream_id)
-    response = StreamingResponse(Streamer.receive_stream(url),
-                                 media_type="video/mp2t")
+    response = StreamingResponse(Streamer.receive_stream(url), media_type="video/mp2t")
     response.set_cookie(key="channel_path", value=url)
     return response
 
@@ -84,14 +85,14 @@ async def live(username: str, password: str, file_path: str, request: Request):
     user_data = user.auth(username, password)
     if user_data["error"] == 1:
         # return status code
-        raise HTTPException(status_code=user_data["error_code"],
-                            detail=f"{user_data['error_message']}")
+        raise HTTPException(
+            status_code=user_data["error_code"], detail=f"{user_data['error_message']}"
+        )
 
     channel_path = request.cookies.get("channel_path")
     channel_path = channel_path.replace(channel_path.split("/")[-1], "")
     url = channel_path + file_path
-    return StreamingResponse(Streamer.receive_stream(url),
-                             media_type="video/mp2t")
+    return StreamingResponse(Streamer.receive_stream(url), media_type="video/mp2t")
 
 
 @app.get("/xmltv.php")
@@ -99,8 +100,9 @@ async def epg(username: str, password: str):
     user_data = user.auth(username, password)
     if user_data["error"] == 1:
         # return status code
-        raise HTTPException(status_code=user_data["error_code"],
-                            detail=f"{user_data['error_message']}")
+        raise HTTPException(
+            status_code=user_data["error_code"], detail=f"{user_data['error_message']}"
+        )
 
     file = open("epg.xml", "rb")
     return StreamingResponse(file, media_type="application/xml")
@@ -115,17 +117,14 @@ async def admin_auth(username: str, password: str):
     status = user.auth(username, password)
     if status["error"] == 0:
         hash = common.gen_hash(20)
-        qb.update("users", {
-            "auth_hash": hash
-        }).where([["username", "=", username]]).go()
+        qb.update("users", {"auth_hash": hash}).where(
+            [["username", "=", username]]
+        ).go()
         response = JSONResponse(content={"status": 200})
         response.set_cookie(key="auth", value=hash)
         return response
     else:
-        return {
-            "status": status["error_code"],
-            "error_info": status["error_message"]
-        }
+        return {"status": status["error_code"], "error_info": status["error_message"]}
 
 
 if __name__ == "__main__":

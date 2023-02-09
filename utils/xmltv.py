@@ -19,15 +19,14 @@ with this software; if not, see <http://www.gnu.org/licenses/>.
 import re
 import sys
 import types
-
-from xml.etree.cElementTree import ElementTree, Element, SubElement, tostring
+from xml.etree.cElementTree import Element, ElementTree, SubElement, tostring
 
 # The Python-XMLTV version
 VERSION = "1.4.3"
 
 # The date format used in XMLTV (the %Z will go away in 0.6)
-date_format = '%Y%m%d%H%M%S %Z'
-date_format_notz = '%Y%m%d%H%M%S'
+date_format = "%Y%m%d%H%M%S %Z"
+date_format_notz = "%Y%m%d%H%M%S"
 
 
 def set_attrs(dict, elem, attrs):
@@ -50,9 +49,9 @@ def set_boolean(dict, name, elem):
     """
     node = elem.find(name)
     if node is not None:
-        if node.text.lower() == 'yes':
+        if node.text.lower() == "yes":
             dict[name] = True
-        elif node.text.lower() == 'no':
+        elif node.text.lower() == "no":
             dict[name] = False
 
 
@@ -67,7 +66,7 @@ def append_text(dict, name, elem, with_lang=True):
         if not name in dict:
             dict[name] = []
         if with_lang:
-            dict[name].append((node.text, node.get('lang', '')))
+            dict[name].append((node.text, node.get("lang", "")))
         else:
             dict[name].append(node.text)
 
@@ -82,7 +81,7 @@ def set_text(dict, name, elem, with_lang=True):
     node = elem.find(name)
     if node is not None:
         if with_lang:
-            dict[name] = (node.text, node.get('lang', ''))
+            dict[name] = (node.text, node.get("lang", ""))
         else:
             dict[name] = node.text
 
@@ -93,12 +92,12 @@ def append_icons(dict, elem):
 
     Append any icons found under 'elem' to 'dict'
     """
-    for iconnode in elem.findall('icon'):
-        if not 'icon' in dict:
-            dict['icon'] = []
+    for iconnode in elem.findall("icon"):
+        if not "icon" in dict:
+            dict["icon"] = []
         icond = {}
-        set_attrs(icond, iconnode, ('src', 'width', 'height'))
-        dict['icon'].append(icond)
+        set_attrs(icond, iconnode, ("src", "width", "height"))
+        dict["icon"].append(icond)
 
 
 def elem_to_channel(elem):
@@ -107,10 +106,10 @@ def elem_to_channel(elem):
 
     Convert channel element to dictionary
     """
-    d = {'id': elem.get('id'), 'display-name': []}
-    append_text(d, 'display-name', elem)
+    d = {"id": elem.get("id"), "display-name": []}
+    append_text(d, "display-name", elem)
     append_icons(d, elem)
-    append_text(d, 'url', elem, with_lang=False)
+    append_text(d, "url", elem, with_lang=False)
 
     return d
 
@@ -125,7 +124,7 @@ def read_channels(fp=None, tree=None):
     if fp:
         et = ElementTree()
         tree = et.parse(fp)
-    return [elem_to_channel(elem) for elem in tree.findall('channel')]
+    return [elem_to_channel(elem) for elem in tree.findall("channel")]
 
 
 def elem_to_programme(elem):
@@ -134,118 +133,127 @@ def elem_to_programme(elem):
 
     Convert programme element to dictionary
     """
-    d = {
-        'start': elem.get('start'),
-        'channel': elem.get('channel'),
-        'title': []
-    }
+    d = {"start": elem.get("start"), "channel": elem.get("channel"), "title": []}
 
-    set_attrs(d, elem, ('stop', 'pdc-start', 'vps-start', 'showview',
-                        'videoplus', 'clumpidx'))
+    set_attrs(
+        d, elem, ("stop", "pdc-start", "vps-start", "showview", "videoplus", "clumpidx")
+    )
 
-    append_text(d, 'title', elem)
-    append_text(d, 'sub-title', elem)
-    append_text(d, 'desc', elem)
+    append_text(d, "title", elem)
+    append_text(d, "sub-title", elem)
+    append_text(d, "desc", elem)
 
-    crednode = elem.find('credits')
+    crednode = elem.find("credits")
     if crednode is not None:
         creddict = {}
         # TODO: actor can have a 'role' attribute
-        for credtype in ('director', 'actor', 'writer', 'adapter', 'producer',
-                         'presenter', 'commentator', 'guest', 'composer',
-                         'editor'):
+        for credtype in (
+            "director",
+            "actor",
+            "writer",
+            "adapter",
+            "producer",
+            "presenter",
+            "commentator",
+            "guest",
+            "composer",
+            "editor",
+        ):
             append_text(creddict, credtype, crednode, with_lang=False)
-        d['credits'] = creddict
+        d["credits"] = creddict
 
-    set_text(d, 'date', elem, with_lang=False)
-    append_text(d, 'category', elem)
-    set_text(d, 'language', elem)
-    set_text(d, 'orig-language', elem)
+    set_text(d, "date", elem, with_lang=False)
+    append_text(d, "category", elem)
+    set_text(d, "language", elem)
+    set_text(d, "orig-language", elem)
 
-    lennode = elem.find('length')
+    lennode = elem.find("length")
     if lennode is not None:
-        lend = {'units': lennode.get('units'), 'length': lennode.text}
-        d['length'] = lend
+        lend = {"units": lennode.get("units"), "length": lennode.text}
+        d["length"] = lend
 
     append_icons(d, elem)
-    append_text(d, 'url', elem, with_lang=False)
-    append_text(d, 'country', elem)
+    append_text(d, "url", elem, with_lang=False)
+    append_text(d, "country", elem)
 
-    for epnumnode in elem.findall('episode-num'):
-        if not 'episode-num' in d:
-            d['episode-num'] = []
-        d['episode-num'].append(
-            (epnumnode.text, epnumnode.get('system', 'xmltv_ns')))
+    for epnumnode in elem.findall("episode-num"):
+        if not "episode-num" in d:
+            d["episode-num"] = []
+        d["episode-num"].append((epnumnode.text, epnumnode.get("system", "xmltv_ns")))
 
-    vidnode = elem.find('video')
+    vidnode = elem.find("video")
     if vidnode is not None:
         vidd = {}
-        for name in ('present', 'colour'):
+        for name in ("present", "colour"):
             set_boolean(vidd, name, vidnode)
-        for videlem in ('aspect', 'quality'):
+        for videlem in ("aspect", "quality"):
             venode = vidnode.find(videlem)
             if venode is not None:
                 vidd[videlem] = venode.text
-        d['video'] = vidd
+        d["video"] = vidd
 
-    audnode = elem.find('audio')
+    audnode = elem.find("audio")
     if audnode is not None:
         audd = {}
-        set_boolean(audd, 'present', audnode)
-        stereonode = audnode.find('stereo')
+        set_boolean(audd, "present", audnode)
+        stereonode = audnode.find("stereo")
         if stereonode is not None:
-            audd['stereo'] = stereonode.text
-        d['audio'] = audd
+            audd["stereo"] = stereonode.text
+        d["audio"] = audd
 
-    psnode = elem.find('previously-shown')
+    psnode = elem.find("previously-shown")
     if psnode is not None:
         psd = {}
-        set_attrs(psd, psnode, ('start', 'channel'))
-        d['previously-shown'] = psd
+        set_attrs(psd, psnode, ("start", "channel"))
+        d["previously-shown"] = psd
 
-    set_text(d, 'premiere', elem)
-    set_text(d, 'last-chance', elem)
+    set_text(d, "premiere", elem)
+    set_text(d, "last-chance", elem)
 
-    if elem.find('new') is not None:
-        d['new'] = True
+    if elem.find("new") is not None:
+        d["new"] = True
 
-    for stnode in elem.findall('subtitles'):
-        if not 'subtitles' in d:
-            d['subtitles'] = []
+    for stnode in elem.findall("subtitles"):
+        if not "subtitles" in d:
+            d["subtitles"] = []
         std = {}
-        set_attrs(std, stnode, ('type', ))
-        set_text(std, 'language', stnode)
-        d['subtitles'].append(std)
+        set_attrs(std, stnode, ("type",))
+        set_text(std, "language", stnode)
+        d["subtitles"].append(std)
 
-    for ratnode in elem.findall('rating'):
-        if not 'rating' in d:
-            d['rating'] = []
+    for ratnode in elem.findall("rating"):
+        if not "rating" in d:
+            d["rating"] = []
         ratd = {}
-        set_attrs(ratd, ratnode, ('system', ))
-        set_text(ratd, 'value', ratnode, with_lang=False)
+        set_attrs(ratd, ratnode, ("system",))
+        set_text(ratd, "value", ratnode, with_lang=False)
         append_icons(ratd, ratnode)
-        d['rating'].append(ratd)
+        d["rating"].append(ratd)
 
-    for srnode in elem.findall('star-rating'):
-        if not 'star-rating' in d:
-            d['star-rating'] = []
+    for srnode in elem.findall("star-rating"):
+        if not "star-rating" in d:
+            d["star-rating"] = []
         srd = {}
-        set_attrs(srd, srnode, ('system', ))
-        set_text(srd, 'value', srnode, with_lang=False)
+        set_attrs(srd, srnode, ("system",))
+        set_text(srd, "value", srnode, with_lang=False)
         append_icons(srd, srnode)
-        d['star-rating'].append(srd)
+        d["star-rating"].append(srd)
 
-    for revnode in elem.findall('review'):
-        if not 'review' in d:
-            d['review'] = []
+    for revnode in elem.findall("review"):
+        if not "review" in d:
+            d["review"] = []
         rd = {}
-        set_attrs(rd, revnode, (
-            'type',
-            'source',
-            'reviewer',
-        ))
-        set_text(rd, 'value', revnode, with_lang=False)
-        d['review'].append(rd)
+        set_attrs(
+            rd,
+            revnode,
+            (
+                "type",
+                "source",
+                "reviewer",
+            ),
+        )
+        set_text(rd, "value", revnode, with_lang=False)
+        d["review"].append(rd)
 
     return d
 
@@ -260,7 +268,7 @@ def read_programmes(fp=None, tree=None):
     if fp:
         et = ElementTree()
         tree = et.parse(fp)
-    return [elem_to_programme(elem) for elem in tree.findall('programme')]
+    return [elem_to_programme(elem) for elem in tree.findall("programme")]
 
 
 def read_data(fp=None, tree=None):
@@ -275,9 +283,18 @@ def read_data(fp=None, tree=None):
         tree = et.parse(fp)
 
     d = {}
-    set_attrs(d, tree,
-              ('date', 'source-info-url', 'source-info-name',
-               'source-data-url', 'generator-info-name', 'generator-info-url'))
+    set_attrs(
+        d,
+        tree,
+        (
+            "date",
+            "source-info-url",
+            "source-info-name",
+            "source-data-url",
+            "generator-info-name",
+            "generator-info-url",
+        ),
+    )
     return d
 
 
@@ -308,13 +325,15 @@ class Writer:
     keys**
     """
 
-    def __init__(self,
-                 encoding="UTF-8",
-                 date=None,
-                 source_info_url=None,
-                 source_info_name=None,
-                 generator_info_url=None,
-                 generator_info_name=None):
+    def __init__(
+        self,
+        encoding="UTF-8",
+        date=None,
+        source_info_url=None,
+        source_info_name=None,
+        generator_info_url=None,
+        generator_info_name=None,
+    ):
         """
         Arguments:
 
@@ -339,14 +358,14 @@ class Writer:
         """
         self.encoding = encoding
         self.data = {
-            'date': date,
-            'source_info_url': source_info_url,
-            'source_info_name': source_info_name,
-            'generator_info_url': generator_info_url,
-            'generator_info_name': generator_info_name
+            "date": date,
+            "source_info_url": source_info_url,
+            "source_info_name": source_info_name,
+            "generator_info_url": generator_info_url,
+            "generator_info_name": generator_info_name,
         }
 
-        self.root = Element('tv')
+        self.root = Element("tv")
         for attr in self.data.keys():
             if self.data[attr]:
                 self.root.set(attr, self.data[attr])
@@ -371,7 +390,7 @@ class Writer:
             else:
                 node.text = text[0]
             if text[1]:
-                node.set('lang', text[1])
+                node.set("lang", text[1])
         else:
             if text == None:
                 node.text = None
@@ -385,10 +404,10 @@ class Writer:
         Create 'icons' under 'node'
         """
         for icon in icons:
-            if not 'src' in icon:
+            if not "src" in icon:
                 raise ValueError("'icon' element requires 'src' attribute")
-            i = SubElement(node, 'icon')
-            for attr in ('src', 'width', 'height'):
+            i = SubElement(node, "icon")
+            for attr in ("src", "width", "height"):
                 if attr in icon:
                     self.setattr(i, attr, icon[attr])
 
@@ -423,163 +442,174 @@ class Writer:
 
           'programme' -- A dict representing XMLTV data
         """
-        p = SubElement(self.root, 'programme')
+        p = SubElement(self.root, "programme")
 
         # programme attributes
-        for attr in ('start', 'channel'):
+        for attr in ("start", "channel"):
             if attr in programme:
                 self.setattr(p, attr, programme[attr])
             else:
-                raise ValueError("'programme' must contain '%s' attribute" %
-                                 attr)
+                raise ValueError("'programme' must contain '%s' attribute" % attr)
 
-        for attr in ('stop', 'pdc-start', 'vps-start', 'showview', 'videoplus',
-                     'clumpidx'):
+        for attr in (
+            "stop",
+            "pdc-start",
+            "vps-start",
+            "showview",
+            "videoplus",
+            "clumpidx",
+        ):
             if attr in programme:
                 self.setattr(p, attr, programme[attr])
 
-        for title in programme['title']:
-            t = SubElement(p, 'title')
+        for title in programme["title"]:
+            t = SubElement(p, "title")
             self.settext(t, title)
 
         # Sub-title and description
-        for element in ('sub-title', 'desc'):
+        for element in ("sub-title", "desc"):
             self.set_zero_ormore(programme, element, p)
 
         # Credits
-        if 'credits' in programme:
-            c = SubElement(p, 'credits')
-            for credtype in ('director', 'actor', 'writer', 'adapter',
-                             'producer', 'presenter', 'commentator', 'guest'):
-                if credtype in programme['credits']:
-                    for name in programme['credits'][credtype]:
+        if "credits" in programme:
+            c = SubElement(p, "credits")
+            for credtype in (
+                "director",
+                "actor",
+                "writer",
+                "adapter",
+                "producer",
+                "presenter",
+                "commentator",
+                "guest",
+            ):
+                if credtype in programme["credits"]:
+                    for name in programme["credits"][credtype]:
                         cred = SubElement(c, credtype)
                         self.settext(cred, name, with_lang=False)
 
         # Date
-        if 'date' in programme:
-            d = SubElement(p, 'date')
-            self.settext(d, programme['date'], with_lang=False)
+        if "date" in programme:
+            d = SubElement(p, "date")
+            self.settext(d, programme["date"], with_lang=False)
 
         # Category
-        self.set_zero_ormore(programme, 'category', p)
+        self.set_zero_ormore(programme, "category", p)
 
         # Language and original language
-        for element in ('language', 'orig-language'):
+        for element in ("language", "orig-language"):
             self.set_zero_orone(programme, element, p)
 
         # Length
-        if 'length' in programme:
-            l = SubElement(p, 'length')
-            self.setattr(l, 'units', programme['length']['units'])
-            self.settext(l, programme['length']['length'], with_lang=False)
+        if "length" in programme:
+            l = SubElement(p, "length")
+            self.setattr(l, "units", programme["length"]["units"])
+            self.settext(l, programme["length"]["length"], with_lang=False)
 
         # Icon
-        if 'icon' in programme:
-            self.seticons(p, programme['icon'])
+        if "icon" in programme:
+            self.seticons(p, programme["icon"])
 
         # URL
-        if 'url' in programme:
-            for url in programme['url']:
-                u = SubElement(p, 'url')
+        if "url" in programme:
+            for url in programme["url"]:
+                u = SubElement(p, "url")
                 self.settext(u, url, with_lang=False)
 
         # Country
-        self.set_zero_ormore(programme, 'country', p)
+        self.set_zero_ormore(programme, "country", p)
 
         # Episode-num
-        if 'episode-num' in programme:
-            for epnum in programme['episode-num']:
-                e = SubElement(p, 'episode-num')
-                self.setattr(e, 'system', epnum[1])
+        if "episode-num" in programme:
+            for epnum in programme["episode-num"]:
+                e = SubElement(p, "episode-num")
+                self.setattr(e, "system", epnum[1])
                 self.settext(e, epnum[0], with_lang=False)
 
         # Video details
-        if 'video' in programme:
-            e = SubElement(p, 'video')
-            for videlem in ('aspect', 'quality'):
-                if videlem in programme['video']:
+        if "video" in programme:
+            e = SubElement(p, "video")
+            for videlem in ("aspect", "quality"):
+                if videlem in programme["video"]:
                     v = SubElement(e, videlem)
-                    self.settext(v,
-                                 programme['video'][videlem],
-                                 with_lang=False)
-            for attr in ('present', 'colour'):
-                if attr in programme['video']:
+                    self.settext(v, programme["video"][videlem], with_lang=False)
+            for attr in ("present", "colour"):
+                if attr in programme["video"]:
                     a = SubElement(e, attr)
-                    if programme['video'][attr]:
-                        self.settext(a, 'yes', with_lang=False)
+                    if programme["video"][attr]:
+                        self.settext(a, "yes", with_lang=False)
                     else:
-                        self.settext(a, 'no', with_lang=False)
+                        self.settext(a, "no", with_lang=False)
 
         # Audio details
-        if 'audio' in programme:
-            a = SubElement(p, 'audio')
-            if 'stereo' in programme['audio']:
-                s = SubElement(a, 'stereo')
-                self.settext(s, programme['audio']['stereo'], with_lang=False)
-            if 'present' in programme['audio']:
-                p = SubElement(a, 'present')
-                if programme['audio']['present']:
-                    self.settext(p, 'yes', with_lang=False)
+        if "audio" in programme:
+            a = SubElement(p, "audio")
+            if "stereo" in programme["audio"]:
+                s = SubElement(a, "stereo")
+                self.settext(s, programme["audio"]["stereo"], with_lang=False)
+            if "present" in programme["audio"]:
+                p = SubElement(a, "present")
+                if programme["audio"]["present"]:
+                    self.settext(p, "yes", with_lang=False)
                 else:
-                    self.settext(p, 'no', with_lang=False)
+                    self.settext(p, "no", with_lang=False)
 
         # Previously shown
-        if 'previously-shown' in programme:
-            ps = SubElement(p, 'previously-shown')
-            for attr in ('start', 'channel'):
-                if attr in programme['previously-shown']:
-                    self.setattr(ps, attr, programme['previously-shown'][attr])
+        if "previously-shown" in programme:
+            ps = SubElement(p, "previously-shown")
+            for attr in ("start", "channel"):
+                if attr in programme["previously-shown"]:
+                    self.setattr(ps, attr, programme["previously-shown"][attr])
 
         # Premiere / last chance
-        for element in ('premiere', 'last-chance'):
+        for element in ("premiere", "last-chance"):
             self.set_zero_orone(programme, element, p)
 
         # New
-        if 'new' in programme:
-            n = SubElement(p, 'new')
+        if "new" in programme:
+            n = SubElement(p, "new")
 
         # Subtitles
-        if 'subtitles' in programme:
-            for subtitles in programme['subtitles']:
-                s = SubElement(p, 'subtitles')
-                if 'type' in subtitles:
-                    self.setattr(s, 'type', subtitles['type'])
-                if 'language' in subtitles:
-                    l = SubElement(s, 'language')
-                    self.settext(l, subtitles['language'])
+        if "subtitles" in programme:
+            for subtitles in programme["subtitles"]:
+                s = SubElement(p, "subtitles")
+                if "type" in subtitles:
+                    self.setattr(s, "type", subtitles["type"])
+                if "language" in subtitles:
+                    l = SubElement(s, "language")
+                    self.settext(l, subtitles["language"])
 
         # Rating
-        if 'rating' in programme:
-            for rating in programme['rating']:
-                r = SubElement(p, 'rating')
-                if 'system' in rating:
-                    self.setattr(r, 'system', rating['system'])
-                v = SubElement(r, 'value')
-                self.settext(v, rating['value'], with_lang=False)
-                if 'icon' in rating:
-                    self.seticons(r, rating['icon'])
+        if "rating" in programme:
+            for rating in programme["rating"]:
+                r = SubElement(p, "rating")
+                if "system" in rating:
+                    self.setattr(r, "system", rating["system"])
+                v = SubElement(r, "value")
+                self.settext(v, rating["value"], with_lang=False)
+                if "icon" in rating:
+                    self.seticons(r, rating["icon"])
 
         # Star rating
-        if 'star-rating' in programme:
-            for star_rating in programme['star-rating']:
-                sr = SubElement(p, 'star-rating')
-                if 'system' in star_rating:
-                    self.setattr(sr, 'system', star_rating['system'])
-                v = SubElement(sr, 'value')
-                self.settext(v, star_rating['value'], with_lang=False)
-                if 'icon' in star_rating:
-                    self.seticons(sr, rating['icon'])
+        if "star-rating" in programme:
+            for star_rating in programme["star-rating"]:
+                sr = SubElement(p, "star-rating")
+                if "system" in star_rating:
+                    self.setattr(sr, "system", star_rating["system"])
+                v = SubElement(sr, "value")
+                self.settext(v, star_rating["value"], with_lang=False)
+                if "icon" in star_rating:
+                    self.seticons(sr, rating["icon"])
 
         # Review
-        if 'review' in programme:
-            for review in programme['review']:
-                r = SubElement(p, 'review')
-                for attr in ('type', 'source', 'reviewer'):
+        if "review" in programme:
+            for review in programme["review"]:
+                r = SubElement(p, "review")
+                for attr in ("type", "source", "reviewer"):
                     if attr in review:
                         self.setattr(r, attr, review[attr])
-                v = SubElement(r, 'value')
-                self.settext(v, review['value'], with_lang=False)
+                v = SubElement(r, "value")
+                self.settext(v, review["value"], with_lang=False)
 
     def addChannel(self, channel):
         """
@@ -589,22 +619,22 @@ class Writer:
 
           'channel' -- A dict representing XMLTV data
         """
-        c = SubElement(self.root, 'channel')
-        self.setattr(c, 'id', channel['id'])
+        c = SubElement(self.root, "channel")
+        self.setattr(c, "id", channel["id"])
 
         # Display Name
-        for display_name in channel['display-name']:
-            dn = SubElement(c, 'display-name')
+        for display_name in channel["display-name"]:
+            dn = SubElement(c, "display-name")
             self.settext(dn, display_name)
 
         # Icon
-        if 'icon' in channel:
-            self.seticons(c, channel['icon'])
+        if "icon" in channel:
+            self.seticons(c, channel["icon"])
 
         # URL
-        if 'url' in channel:
-            for url in channel['url']:
-                u = SubElement(c, 'url')
+        if "url" in channel:
+            for url in channel["url"]:
+                u = SubElement(c, "url")
                 self.settext(u, url, with_lang=False)
 
     def write(self, file, pretty_print=False):
@@ -620,12 +650,13 @@ class Writer:
         et.write(file, self.encoding, xml_declaration=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Tests
     from io import StringIO
 
     # An example file
-    xmldata = StringIO("""<?xml version="1.0" encoding="iso-8859-1"?>
+    xmldata = StringIO(
+        """<?xml version="1.0" encoding="iso-8859-1"?>
 <!DOCTYPE tv SYSTEM "xmltv.dtd">
 <tv date="20030811003608 -0300" source-info-url="http://www.funktronics.ca/python-xmltv" source-info-name="Funktronics" generator-info-name="python-xmltv" generator-info-url="http://www.funktronics.ca/python-xmltv">
   <channel id="C10eltv.zap2it.com">
@@ -691,7 +722,8 @@ if __name__ == '__main__':
     <url>http://www.nbc.com</url>
   </programme>
 </tv>
-""")
+"""
+    )
     print(read_data(xmldata))
     xmldata.seek(0)
     print(read_channels(xmldata))
@@ -699,113 +731,106 @@ if __name__ == '__main__':
     print(read_programmes(xmldata))
 
     # Test the writer
-    programmes = [{
-        'audio': {
-            'stereo': u'stereo'
+    programmes = [
+        {
+            "audio": {"stereo": "stereo"},
+            "category": [("Biz", ""), ("Fin", "")],
+            "channel": "C23robtv.zap2it.com",
+            "date": "2003",
+            "start": "20030702000000 ADT",
+            "stop": "20030702003000 ADT",
+            "title": [("This Week in Business", "")],
         },
-        'category': [(u'Biz', u''), (u'Fin', u'')],
-        'channel': u'C23robtv.zap2it.com',
-        'date': u'2003',
-        'start': u'20030702000000 ADT',
-        'stop': u'20030702003000 ADT',
-        'title': [(u'This Week in Business', u'')]
-    }, {
-        'audio': {
-            'stereo': u'stereo'
+        {
+            "audio": {"stereo": "stereo"},
+            "category": [("Comedy", "")],
+            "channel": "C36wuhf.zap2it.com",
+            "country": [("USA", "")],
+            "credits": {"producer": ["Larry David"], "actor": ["Jerry Seinfeld"]},
+            "date": "1995",
+            "desc": [
+                (
+                    "In an effort to grow up, George proposes marriage to former girlfriend Susan.",
+                    "",
+                )
+            ],
+            "episode-num": [("7 . 1 . 1/1", "xmltv_ns")],
+            "language": ("English", ""),
+            "last-chance": ("Hah!", ""),
+            "length": {"units": "minutes", "length": "22"},
+            "new": True,
+            "orig-language": ("English", ""),
+            "premiere": ("Not really. Just testing", "en"),
+            "previously-shown": {
+                "channel": "C12whdh.zap2it.com",
+                "start": "19950921103000 ADT",
+            },
+            "rating": [
+                {
+                    "icon": [
+                        {
+                            "height": "64",
+                            "src": "http://some.ratings/PGicon.png",
+                            "width": "64",
+                        }
+                    ],
+                    "system": "VCHIP",
+                    "value": "PG",
+                }
+            ],
+            "review": [{"type": "url", "value": "http://some.review/"}],
+            "star-rating": [
+                {
+                    "icon": [
+                        {
+                            "height": "32",
+                            "src": "http://some.star/icon.png",
+                            "width": "32",
+                        }
+                    ],
+                    "value": "4/5",
+                }
+            ],
+            "start": "20030702000000 ADT",
+            "stop": "20030702003000 ADT",
+            "sub-title": [("The Engagement", "")],
+            "subtitles": [{"type": "teletext", "language": ("English", "")}],
+            "title": [("Seinfeld", "")],
+            "url": [("http://www.nbc.com/")],
+            "video": {
+                "colour": True,
+                "aspect": "4:3",
+                "present": True,
+                "quality": "standard",
+            },
         },
-        'category': [(u'Comedy', u'')],
-        'channel':
-        u'C36wuhf.zap2it.com',
-        'country': [(u'USA', u'')],
-        'credits': {
-            'producer': [u'Larry David'],
-            'actor': [u'Jerry Seinfeld']
-        },
-        'date':
-        u'1995',
-        'desc':
-        [(u'In an effort to grow up, George proposes marriage to former girlfriend Susan.',
-          u'')],
-        'episode-num': [(u'7 . 1 . 1/1', u'xmltv_ns')],
-        'language': (u'English', u''),
-        'last-chance': (u'Hah!', u''),
-        'length': {
-            'units': u'minutes',
-            'length': '22'
-        },
-        'new':
-        True,
-        'orig-language': (u'English', u''),
-        'premiere': (u'Not really. Just testing', u'en'),
-        'previously-shown': {
-            'channel': u'C12whdh.zap2it.com',
-            'start': u'19950921103000 ADT'
-        },
-        'rating': [{
-            'icon': [{
-                'height': u'64',
-                'src': u'http://some.ratings/PGicon.png',
-                'width': u'64'
-            }],
-            'system':
-            u'VCHIP',
-            'value':
-            u'PG'
-        }],
-        'review': [{
-            'type': 'url',
-            'value': 'http://some.review/'
-        }],
-        'star-rating': [{
-            'icon': [{
-                'height': u'32',
-                'src': u'http://some.star/icon.png',
-                'width': u'32'
-            }],
-            'value':
-            u'4/5'
-        }],
-        'start':
-        u'20030702000000 ADT',
-        'stop':
-        u'20030702003000 ADT',
-        'sub-title': [(u'The Engagement', u'')],
-        'subtitles': [{
-            'type': u'teletext',
-            'language': (u'English', u'')
-        }],
-        'title': [(u'Seinfeld', u'')],
-        'url': [(u'http://www.nbc.com/')],
-        'video': {
-            'colour': True,
-            'aspect': u'4:3',
-            'present': True,
-            'quality': 'standard'
-        }
-    }]
+    ]
 
-    channels = [{
-        'display-name': [(u'Channel 10 ELTV', u'')],
-        'id': u'C10eltv.zap2it.com',
-        'url': [u'http://www.eastlink.ca/']
-    }, {
-        'display-name': [(u'Channel 11 CBHT', u'en')],
-        'icon': [{
-            'src':
-            u'http://tvlistings2.zap2it.com/tms_network_logos/cbc.gif'
-        }],
-        'id':
-        u'C11cbht.zap2it.com'
-    }]
+    channels = [
+        {
+            "display-name": [("Channel 10 ELTV", "")],
+            "id": "C10eltv.zap2it.com",
+            "url": ["http://www.eastlink.ca/"],
+        },
+        {
+            "display-name": [("Channel 11 CBHT", "en")],
+            "icon": [
+                {"src": "http://tvlistings2.zap2it.com/tms_network_logos/cbc.gif"}
+            ],
+            "id": "C11cbht.zap2it.com",
+        },
+    ]
 
-    w = Writer(encoding="us-ascii",
-               date="20030811003608 -0300",
-               source_info_url="http://www.funktronics.ca/python-xmltv",
-               source_info_name="Funktronics",
-               generator_info_name="python-xmltv",
-               generator_info_url="http://www.funktronics.ca/python-xmltv")
+    w = Writer(
+        encoding="us-ascii",
+        date="20030811003608 -0300",
+        source_info_url="http://www.funktronics.ca/python-xmltv",
+        source_info_name="Funktronics",
+        generator_info_name="python-xmltv",
+        generator_info_url="http://www.funktronics.ca/python-xmltv",
+    )
     for c in channels:
         w.addChannel(c)
     for p in programmes:
         w.addProgramme(p)
-    w.write('out.xml', pretty_print=True)
+    w.write("out.xml", pretty_print=True)

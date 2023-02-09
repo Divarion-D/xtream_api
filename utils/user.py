@@ -1,42 +1,34 @@
 import bcrypt
+
 from utils.db import *
 
-qb = QueryBuilder(DataBase(), 'data.db')
+qb = QueryBuilder(DataBase(), "data.db")
 
 
 def create_admin(username: str, password: str):
-    hash_pwd = bcrypt.hashpw(password.encode('utf-8'),
-                             bcrypt.gensalt())  # hash password
-    qb.insert("users", {
-        'username': username,
-        'password': hash_pwd.decode('utf-8'),
-        'is_admin': 1
-    }).go()
+    hash_pwd = bcrypt.hashpw(
+        password.encode("utf-8"), bcrypt.gensalt()
+    )  # hash password
+    qb.insert(
+        "users",
+        {"username": username, "password": hash_pwd.decode("utf-8"), "is_admin": 1},
+    ).go()
 
 
 def auth(username: str, password: str):
     user = qb.select("users").where([["username", "=", username]]).one()
     if user == None:
-        return {
-            "error": 1,
-            "error_code": 401,
-            "error_message": "Username not found"
-        }
+        return {"error": 1, "error_code": 401, "error_message": "Username not found"}
     else:
         # check password
-        if bcrypt.checkpw(password.encode('utf-8'),
-                          user["password"].encode('utf-8')):
+        if bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
             return {"error": 0, "user_info": user}
         else:
-            return {
-                "error": 1,
-                "error_code": 402,
-                "error_message": "Wrong password"
-            }
+            return {"error": 1, "error_code": 402, "error_message": "Wrong password"}
 
 
 def user_info_xtream(data, username, password):
-    data = data['user_info']
+    data = data["user_info"]
 
     user_info = {}
     user_info["username"] = username
