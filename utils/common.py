@@ -1,16 +1,12 @@
-import json
 import random
 import string
 import time
 
+import config as cfg
 import utils.common as common
 from utils.db import *
 
 qb = QueryBuilder(DataBase(), "data.db")
-
-# read setting.json
-with open("setting.json", "r") as f:
-    SETTING = json.load(f)
 
 
 def add_tables():
@@ -48,10 +44,8 @@ def add_tables():
 
 def server_info():
     server_info = {}
-    server_info[
-        "url"
-    ] = f"http://{common.SETTING['server']['ip']}:{common.SETTING['server']['port']}"
-    server_info["port"] = str(common.SETTING["server"]["port"])
+    server_info["url"] = f"http://{cfg.SERVER_IP}:{cfg.SERVER_PORT}"
+    server_info["port"] = str(cfg.SERVER_PORT)
     server_info["https_port"] = "8000"
     server_info["rtmp_port"] = "8000"
     server_info["server_protocol"] = "http"
@@ -64,7 +58,7 @@ def server_info():
 def gen_hash(length=32):
     """
     It generates a random string of length 32, using only lowercase letters
-    
+
     :param length: The length of the hash, defaults to 32 (optional)
     :return: A string of random lowercase letters of length 32.
     """

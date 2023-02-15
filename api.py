@@ -10,6 +10,7 @@ import utils.user as user
 import utils.video as video
 from utils.db import *
 from utils.streamer import Streamer
+import config as cfg
 
 qb = QueryBuilder(DataBase(), "data.db")
 common.add_tables()
@@ -21,7 +22,7 @@ if not qb.select("users").where([["is_admin", "=", 1]]).all():
     admin_password = input("Enter admin password: ")
     user.create_admin(admin_username, admin_password)
 
-iptv_data = iptv.M3U_Parser(common.SETTING["iptv"]["list_url"])
+iptv_data = iptv.M3U_Parser(cfg.IPTV_LIST_URL)
 
 app = FastAPI()
 
@@ -151,6 +152,6 @@ async def admin_auth(username: str, password: str):
 if __name__ == "__main__":
     import utils.common as common
 
-    ip = common.SETTING["server"]["ip"]
-    port = common.SETTING["server"]["port"]
+    ip = cfg.SERVER_IP
+    port = cfg.SERVER_PORT
     uvicorn.run("api:app", host=ip, port=int(port), debug=True, reload=True)

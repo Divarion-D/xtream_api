@@ -1,5 +1,6 @@
 import re
 import time
+import config as cfg
 
 import requests
 
@@ -17,7 +18,7 @@ class M3U_Parser:
         channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
         if (
             channels_lupd
-            < int(time.time()) - common.SETTING["iptv"]["upd_interval_list"]
+            < int(time.time()) - cfg.IPTV_UPD_INTERVAL_LIST
         ):
             # clear channels
             qb.delete("iptv_channels")
