@@ -29,7 +29,6 @@ app = FastAPI()
 # API XTREAM-CODES
 ############################################################################################################
 
-
 @app.get("/player_api.php")
 async def api(username: str, password: str, action: Union[str, None] = None):
     if username != None and password != None and action == None:
