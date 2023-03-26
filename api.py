@@ -31,7 +31,7 @@ app = FastAPI()
 
 @app.get("/player_api.php")
 async def api(username: str, password: str, action: Union[str, None] = None):
-    if username != None and password != None and action == None:
+    if username != None and password != None and action is None:
         user_data = user.auth(username, password)
         if user_data["error"] == 1:
             # return status code 401
@@ -136,16 +136,15 @@ async def epg(username: str, password: str):
 @app.get("/admin_auth")
 async def admin_auth(username: str, password: str):
     status = user.auth(username, password)
-    if status["error"] == 0:
-        hash = common.gen_hash(20)
-        qb.update("users", {"auth_hash": hash}).where(
-            [["username", "=", username]]
-        ).go()
-        response = JSONResponse(content={"status": 200})
-        response.set_cookie(key="auth", value=hash)
-        return response
-    else:
+    if status["error"] != 0:
         return {"status": status["error_code"], "error_info": status["error_message"]}
+    hash = common.gen_hash(20)
+    qb.update("users", {"auth_hash": hash}).where(
+        [["username", "=", username]]
+    ).go()
+    response = JSONResponse(content={"status": 200})
+    response.set_cookie(key="auth", value=hash)
+    return response
 
 
 if __name__ == "__main__":
