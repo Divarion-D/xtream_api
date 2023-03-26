@@ -4,7 +4,6 @@ import time
 import os
 
 import config as cfg
-import utils.common as common
 from utils.db import *
 
 qb = QueryBuilder(DataBase(), "data.db")

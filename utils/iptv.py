@@ -17,7 +17,7 @@ qb = QueryBuilder(DataBase(), "data.db")
 class M3U_Parser:
     def __init__(self, m3u_url):
         self.m3u_url = m3u_url
-        self.m3u_list = self.get_m3u_list()
+        self.m3u_list = self._get_m3u_list()
         channels_lupd = common.get_setting_db("chenel_lupd")
         channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
         if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_LIST:
@@ -28,8 +28,66 @@ class M3U_Parser:
             self.parse_m3u()
             common.set_setting_bd("chenel_lupd", int(time.time()))
 
-    def get_m3u_list(self):
-        return requests.get(self.m3u_url).text.splitlines()
+    def _get_m3u_list(self):
+        """Function to get m3u list from given url"""
+        timeout = 30
+        try:
+            request = requests.get(self.m3u_url, timeout=timeout)
+            if request.status_code == 200:
+                return request.text.splitlines()
+            else:
+                print("Error get m3u list")
+                return []
+        except requests.exceptions.Timeout:
+            print("Playlist request timeout")
+            return []
+        except requests.exceptions.RequestException as e:
+            print(e)
+            return []
+            
+    def _get_m3u_list_key(self, line, list, flag):
+        # Check if the line starts with #EXTINF:
+        if line.startswith("#EXTINF:"):
+            flag = 1
+            # Get the stream icon
+            list["stream_icon"] = (
+                re.search('tvg-logo="(.+?)"', line)[1].strip()
+                if "tvg-logo" in line
+                else ""
+            )
+            # Get the name
+            list["name"] = (
+                re.search('tvg-name="(.+?)"', line)[1].strip()
+                if "tvg-name" in line
+                else re.search(",(.+)", line)[1].strip()
+            )
+            # Get the group title
+            list["group_title"] = (
+                re.search('group-title="(.+?)"', line)[1].strip()
+                if "group-title" in line
+                else ""
+            )
+            # Get the epg channel id
+            list["epg_channel_id"] = (
+                re.search('tvg-id="(.+?)"', line)[1].strip()
+                if "tvg-id" in line
+                else ""
+            )
+            # Uncomment the following lines to get the other values
+            # list["tvg_shift"] = re.search('tvg-shift="(.+?)"', line).group(1) if 'tvg-shift' in line else None
+            # list["tvg_url"] = re.search('tvg-url="(.+?)"', line).group(1) if 'tvg-url' in line else None
+            # list["tvg_rec"] = re.search('tvg-rec="(.+?)"', line).group(1) if 'tvg-rec' in line else None
+            # list["tvg_chno"] = re.search('tvg-chno="(.+?)"', line).group(1) if 'tvg-chno' in line else None
+            # list["tvg_epg"] = re.search('tvg-epg="(.+?)"', line).group(1) if 'tvg-epg' in line else None
+            # list["tvg_radio"] = re.search('tvg-radio="(.+?)"', line).group(1) if 'tvg-radio' in line else None
+        # Check if the line starts with #EXTGRP:
+        elif line.startswith("#EXTGRP:"):
+            list["group_title"] = re.search("#EXTGRP:(.+)", line)[1]
+        # Check if the line starts with http
+        elif line.startswith("http"):
+            list["url"] = line
+            flag = 0
+        return flag, list
 
     def parse_m3u(self):
         """
@@ -37,47 +95,14 @@ class M3U_Parser:
         """
         print("Parsing M3U file...")
         data_list = {}
-        cnl = 1
+        flag = 1
         for line in self.m3u_list:
-            if line.startswith("#EXTINF:"):
-                cnl = 1
-                data_list["stream_icon"] = (
-                    re.search('tvg-logo="(.+?)"', line)[1].strip()
-                    if "tvg-logo" in line
-                    else ""
-                )
-                data_list["name"] = (
-                    re.search('tvg-name="(.+?)"', line)[1].strip()
-                    if "tvg-name" in line
-                    else re.search(",(.+)", line)[1].strip()
-                )
-                data_list["group_title"] = (
-                    re.search('group-title="(.+?)"', line)[1].strip()
-                    if "group-title" in line
-                    else ""
-                )
-                data_list["epg_channel_id"] = (
-                    re.search('tvg-id="(.+?)"', line)[1].strip()
-                    if "tvg-id" in line
-                    else ""
-                )
-                        # data_list["tvg_shift"] = re.search('tvg-shift="(.+?)"', line).group(1) if 'tvg-shift' in line else None
-                        # data_list["tvg_url"] = re.search('tvg-url="(.+?)"', line).group(1) if 'tvg-url' in line else None
-                        # data_list["tvg_rec"] = re.search('tvg-rec="(.+?)"', line).group(1) if 'tvg-rec' in line else None
-                        # data_list["tvg_chno"] = re.search('tvg-chno="(.+?)"', line).group(1) if 'tvg-chno' in line else None
-                        # data_list["tvg_epg"] = re.search('tvg-epg="(.+?)"', line).group(1) if 'tvg-epg' in line else None
-                        # data_list["tvg_radio"] = re.search('tvg-radio="(.+?)"', line).group(1) if 'tvg-radio' in line else None
-            elif line.startswith("#EXTGRP:"):
-                data_list["group_title"] = re.search("#EXTGRP:(.+)", line)[1]
-            elif line.startswith("http"):
-                data_list["url"] = line
-                cnl = 0
-
-            if cnl == 0 and data_list:
+            flag, data_list = self._get_m3u_list_key(line, data_list, flag)
+            if flag == 0 and data_list:
                 # remove '
                 data_list["name"] = data_list["name"].replace("'", "")
-
                 print("Update:" + data_list["name"])
+                # check if category exists
                 if "group_title" in data_list and (
                     not qb.select("iptv_categories")
                     .where([["category_name", "=", data_list["group_title"]]])
@@ -170,11 +195,12 @@ class EPG_Parser:
         xmltv.locale = "Latin-1"
         xmltv.date_format = "%Y%m%d%H%M%S %Z"
 
-    def _get_icon(self, icons):
-        if len(icons) == 1:
-            chanel_icon = icons[0]["src"]
-        else:
-            # if icon count is more than 1
+    def _get_icon(self, icons=None):
+        if not icons:
+            return None
+        chanel_icon = icons[0]["src"]
+        # if icon count is more than 1
+        if len(icons) > 1:
             for icon in icons:
                 chanel_icon = icon["src"]
                 break

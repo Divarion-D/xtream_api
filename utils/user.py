@@ -6,9 +6,7 @@ qb = QueryBuilder(DataBase(), "data.db")
 
 
 def create_admin(username: str, password: str):
-    hash_pwd = bcrypt.hashpw(
-        password.encode("utf-8"), bcrypt.gensalt()
-    )  # hash password
+    hash_pwd = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())  # hash password
     qb.insert(
         "users",
         {"username": username, "password": hash_pwd.decode("utf-8"), "is_admin": 1},
