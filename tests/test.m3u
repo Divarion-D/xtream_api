@@ -1,0 +1,7 @@
+#EXTM3U
+#EXTINF:0,BipBop Sample
+http://playertest.longtailvideo.com/adaptive/bipbop/bipbop.m3u8
+#EXTINF:0,BigBuckBunny
+https://live-par-1-abr-cdn.livepush.io/live_abr_cdn/emaIqCGoZw-6/index.m3u8
+#EXTINF:-1,Eight
+https://moctobpltc-i.akamaihd.net/hls/live/571329/eight/playlist.m3u8
