@@ -1,6 +1,7 @@
 import random
 import string
 import time
+import os
 
 import config as cfg
 import utils.common as common
@@ -77,3 +78,7 @@ def get_setting_db(name):
 
 def set_setting_bd(name, value):
     qb.update("settings", {"value": value}).where([["name", "=", name]]).go()
+
+def create_temp_folder():
+    if not os.path.exists("./temp"):
+        os.makedirs("./temp")

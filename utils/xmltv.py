@@ -66,9 +66,9 @@ def append_text(dict, name, elem, with_lang=True):
         if not name in dict:
             dict[name] = []
         if with_lang:
-            dict[name].append((node.text, node.get("lang", "")))
+            dict[name].append({"name": node.text, "lang": node.get("lang", "")})
         else:
-            dict[name].append(node.text)
+            dict[name].append({"name": node.text})
 
 
 def set_text(dict, name, elem, with_lang=True):

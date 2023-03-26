@@ -3,8 +3,12 @@ import time
 import config as cfg
 
 import requests
+import gzip
+import shutil
+import os
 
 import utils.common as common
+import utils.xmltv as xmltv
 from utils.db import *
 
 qb = QueryBuilder(DataBase(), "data.db")
@@ -16,10 +20,7 @@ class M3U_Parser:
         self.m3u_list = self.get_m3u_list()
         channels_lupd = common.get_setting_db("chenel_lupd")
         channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
-        if (
-            channels_lupd
-            < int(time.time()) - cfg.IPTV_UPD_INTERVAL_LIST
-        ):
+        if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_LIST:
             # clear channels
             qb.delete("iptv_channels")
             # clear categories
@@ -158,7 +159,7 @@ class M3U_Parser:
         """
         It takes a stream_id as an argument, and returns the direct_source of the channel with that
         stream_id
-        
+
         :param stream_id: The stream ID of the channel you want to get the URL for
         :return: A dictionary with the key "direct_source" and the value of the channel url.
         """
@@ -166,3 +167,83 @@ class M3U_Parser:
             qb.select("iptv_channels").where([["stream_id", "=", stream_id]]).one()
         )
         return channel["direct_source"]
+
+
+class EPG_Parser:
+    def __init__(self):
+        self.epg = {}
+        xmltv.locale = "Latin-1"
+        xmltv.date_format = "%Y%m%d%H%M%S %Z"
+
+    def _get_icon(self, icons):
+        if len(icons) == 1:
+            chanel_icon = icons[0]["src"]
+        else:
+            # if icon count is more than 1
+            for icon in icons:
+                chanel_icon = icon["src"]
+                break
+        return chanel_icon
+
+    def parse_xml(self):
+        files = cfg.IPTV_EPG_LIST_IN
+
+        common.create_temp_folder()
+
+        # for file in files:
+        # # create epg folder
+        # if not os.path.exists("./temp/epg"):
+        #     os.makedirs("./temp/epg")
+
+        # # download file
+        # get_file = requests.get(file)
+        # with open("./temp/epg/" + file.split("/")[-1], "wb") as f:
+        #     f.write(get_file.content)
+        # file = "./temp/epg/" + file.split("/")[-1]
+
+        # # unzip file
+        # new_name = common.gen_hash(5) + ".xml"
+        # if file.split(".")[-1] in "gz":
+        #     with gzip.open(file, "rb") as f_in:
+        #         with open("./temp/epg/" + new_name, "wb") as f_out:
+        #             shutil.copyfileobj(f_in, f_out)
+        #     # remove arhive
+        #     os.remove(file)
+        #     file = "./temp/epg/" + new_name
+
+        # parse xml
+        # chanels = xmltv.read_channels(open('./temp/epg/qmqev.xml', "r"))
+        # programmes = xmltv.read_programmes(open('./temp/epg/qmqev.xml', "r"))
+
+        chanels = xmltv.read_channels(open("./temp/epg/jhija.xml", "r"))
+
+        # get all channels name in db
+        channels_db = qb.select("iptv_channels").all()
+
+        i = 0
+
+        for channel in chanels:
+            # get channel id from db
+            channel_id = None
+            for channel_db in channels_db:
+                for chanel_name in channel["display-name"]:
+                    if chanel_name["name"] == channel_db["name"]:
+                        channel_id = channel["id"]
+                        # if icon count is 1
+                        icon = self._get_icon(channel["icon"])
+                        break
+                else:
+                    # Continue if the inner loop wasn't broken.
+                    continue
+                # Inner loop was broken, break the outer.
+                break
+
+            if channel_id:
+                self.epg[i] = {}
+                self.epg[i]["chanel_id"] = channel_id
+                self.epg[i]["name_db"] = channel_db["name"]
+                self.epg[i]["id_db"] = channel_db["channel_id"]
+                self.epg[i]["icon"] = icon
+                self.epg[i]["programmes"] = []
+                i += 1
+        print(self.epg)
