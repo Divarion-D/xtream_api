@@ -44,13 +44,14 @@ def add_tables():
 
 
 def server_info():
-    server_info = {}
-    server_info["url"] = f"http://{cfg.SERVER_IP}:{cfg.SERVER_PORT}"
-    server_info["port"] = str(cfg.SERVER_PORT)
-    server_info["https_port"] = "8000"
-    server_info["rtmp_port"] = "8000"
-    server_info["server_protocol"] = "http"
-    server_info["timestamp_now"] = time.time()
+    server_info = {
+        "url": f"http://{cfg.SERVER_IP}:{cfg.SERVER_PORT}",
+        "port": str(cfg.SERVER_PORT),
+        "https_port": "8000",
+        "rtmp_port": "8000",
+        "server_protocol": "http",
+        "timestamp_now": time.time(),
+    }
     server_info["time_now"] = time.strftime("%Y-%m-%d, %H:%M:%S", time.localtime())
     server_info["timezone"] = ""
     return server_info
@@ -64,16 +65,14 @@ def gen_hash(length=32):
     :return: A string of random lowercase letters of length 32.
     """
     letters = string.ascii_lowercase
-    return "".join(random.choice(letters) for i in range(length))
+    return "".join(random.choice(letters) for _ in range(length))
 
 
 def get_setting_db(name):
-    data = qb.select("settings").where([["name", "=", name]]).one()
-    if data:
+    if data := qb.select("settings").where([["name", "=", name]]).one():
         return data["value"]
-    else:
-        qb.insert("settings", {"name": name, "value": ""}).go()
-        return ""
+    qb.insert("settings", {"name": name, "value": ""}).go()
+    return ""
 
 
 def set_setting_bd(name, value):

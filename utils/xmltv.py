@@ -63,7 +63,7 @@ def append_text(dict, name, elem, with_lang=True):
     'with_lang' is 'True', a tuple of ('text', 'lang') is appended
     """
     for node in elem.findall(name):
-        if not name in dict:
+        if name not in dict:
             dict[name] = []
         if with_lang:
             dict[name].append({"name": node.text, "lang": node.get("lang", "")})
@@ -80,10 +80,7 @@ def set_text(dict, name, elem, with_lang=True):
     """
     node = elem.find(name)
     if node is not None:
-        if with_lang:
-            dict[name] = (node.text, node.get("lang", ""))
-        else:
-            dict[name] = node.text
+        dict[name] = (node.text, node.get("lang", "")) if with_lang else node.text
 
 
 def append_icons(dict, elem):
@@ -93,7 +90,7 @@ def append_icons(dict, elem):
     Append any icons found under 'elem' to 'dict'
     """
     for iconnode in elem.findall("icon"):
-        if not "icon" in dict:
+        if "icon" not in dict:
             dict["icon"] = []
         icond = {}
         set_attrs(icond, iconnode, ("src", "width", "height"))
@@ -177,7 +174,7 @@ def elem_to_programme(elem):
     append_text(d, "country", elem)
 
     for epnumnode in elem.findall("episode-num"):
-        if not "episode-num" in d:
+        if "episode-num" not in d:
             d["episode-num"] = []
         d["episode-num"].append((epnumnode.text, epnumnode.get("system", "xmltv_ns")))
 
@@ -214,7 +211,7 @@ def elem_to_programme(elem):
         d["new"] = True
 
     for stnode in elem.findall("subtitles"):
-        if not "subtitles" in d:
+        if "subtitles" not in d:
             d["subtitles"] = []
         std = {}
         set_attrs(std, stnode, ("type",))
@@ -222,7 +219,7 @@ def elem_to_programme(elem):
         d["subtitles"].append(std)
 
     for ratnode in elem.findall("rating"):
-        if not "rating" in d:
+        if "rating" not in d:
             d["rating"] = []
         ratd = {}
         set_attrs(ratd, ratnode, ("system",))
@@ -231,7 +228,7 @@ def elem_to_programme(elem):
         d["rating"].append(ratd)
 
     for srnode in elem.findall("star-rating"):
-        if not "star-rating" in d:
+        if "star-rating" not in d:
             d["star-rating"] = []
         srd = {}
         set_attrs(srd, srnode, ("system",))
@@ -240,7 +237,7 @@ def elem_to_programme(elem):
         d["star-rating"].append(srd)
 
     for revnode in elem.findall("review"):
-        if not "review" in d:
+        if "review" not in d:
             d["review"] = []
         rd = {}
         set_attrs(
@@ -305,16 +302,15 @@ def indent(elem, level=0):
     i = "\n" + level * "  "
     if len(elem):
         if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
+            elem.text = f"{i}  "
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
             indent(elem, level + 1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
+    elif level and (not elem.tail or not elem.tail.strip()):
+        elem.tail = i
 
 
 class Writer:
@@ -366,7 +362,7 @@ class Writer:
         }
 
         self.root = Element("tv")
-        for attr in self.data.keys():
+        for attr in self.data:
             if self.data[attr]:
                 self.root.set(attr, self.data[attr])
 
@@ -385,17 +381,11 @@ class Writer:
         Set 'node's text content to 'text'
         """
         if with_lang:
-            if text[0] == None:
-                node.text = None
-            else:
-                node.text = text[0]
+            node.text = None if text[0] is None else text[0]
             if text[1]:
                 node.set("lang", text[1])
         else:
-            if text == None:
-                node.text = None
-            else:
-                node.text = text
+            node.text = None if text is None else text
 
     def seticons(self, node, icons):
         """
@@ -404,7 +394,7 @@ class Writer:
         Create 'icons' under 'node'
         """
         for icon in icons:
-            if not "src" in icon:
+            if "src" not in icon:
                 raise ValueError("'icon' element requires 'src' attribute")
             i = SubElement(node, "icon")
             for attr in ("src", "width", "height"):
@@ -449,7 +439,7 @@ class Writer:
             if attr in programme:
                 self.setattr(p, attr, programme[attr])
             else:
-                raise ValueError("'programme' must contain '%s' attribute" % attr)
+                raise ValueError(f"'programme' must contain '{attr}' attribute")
 
         for attr in (
             "stop",
