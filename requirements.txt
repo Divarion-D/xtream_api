@@ -1,5 +1,5 @@
 fastapi==0.89.1
 httpx==0.23.3
-python_bcrypt==0.3.2
+bcrypt==4.0.0
 requests==2.22.0
 uvicorn==0.13.3
