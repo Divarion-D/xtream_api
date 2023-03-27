@@ -83,6 +83,57 @@ class TestGetIcon(unittest.TestCase):
     def test_empty_icons(self):
         self.assertEqual(epg_obj._get_icon([]), None)
 
+class TestParseChannel(unittest.TestCase):
+
+    def setUp(self):
+        self.channel = {
+            "id": "1",
+            "display-name": [
+              {
+                "name": "Channel 1"
+              }
+            ],
+            "icon": [
+                {
+                    "src": "http://example.com/logo.png"
+                }
+            ]
+        }
+        self.channels_db = [
+            {
+                "name": "Channel 1",
+                "id": "1"
+            },
+            {
+                "name": "Channel 2",
+                "id": "2"
+            }
+        ]
+
+    def test_parse_channel(self):
+        name, id, channel_db, icon = epg_obj.parse_channel(self.channel, self.channels_db)
+        self.assertEqual(name["name"], "Channel 1")
+        self.assertEqual(id, "1")
+        self.assertEqual(channel_db, {"name": "Channel 1", "id": "1"})
+        self.assertEqual(icon, 'http://example.com/logo.png')
+
+    def test_parse_channel_no_match(self):
+        channel = {
+            "id": "2",
+            "display-name": [
+              {
+                "name": "Channel 3"
+              }
+            ],
+            "icon": {
+              "src": "http://example.com/logo.png"
+            }
+        }
+        name, id, channel_db, icon = epg_obj.parse_channel(channel, self.channels_db)
+        self.assertIsNone(name)
+        self.assertIsNone(id)
+        self.assertIsNone(channel_db)
+        self.assertIsNone(icon)  
 
 if __name__ == '__main__':
     unittest.main()

@@ -58,13 +58,12 @@ def set_boolean(dict, name, elem):
 def append_text(dict, name, elem, with_lang=True):
     """
     append_text(dict, name, elem, with_lang=True) -> None
-
     Append any text nodes with 'name' found in 'elem' to 'dict'['name']. If
     'with_lang' is 'True', a tuple of ('text', 'lang') is appended
     """
+    if name not in dict:
+        dict[name] = []
     for node in elem.findall(name):
-        if name not in dict:
-            dict[name] = []
         if with_lang:
             dict[name].append({"name": node.text, "lang": node.get("lang", "")})
         else:
@@ -100,7 +99,6 @@ def append_icons(dict, elem):
 def elem_to_channel(elem):
     """
     elem_to_channel(Element) -> dict
-
     Convert channel element to dictionary
     """
     d = {"id": elem.get("id"), "display-name": []}
@@ -111,18 +109,20 @@ def elem_to_channel(elem):
     return d
 
 
-def read_channels(fp=None, tree=None):
+def read_channels(fp=None):
     """
-    read_channels(fp=None, tree=None) -> list
-
+    read_channels(fp=None) -> list
     Return a list of channel dictionaries from file object 'fp' or the
     ElementTree 'tree'
     """
     if fp:
-        et = ElementTree()
-        tree = et.parse(fp)
-    return [elem_to_channel(elem) for elem in tree.findall("channel")]
-
+        try:
+            et = ElementTree()
+            tree = et.parse(fp)
+            return (elem_to_channel(elem) for elem in tree.findall("channel"))
+        except Exception as e:
+            print(f"Error parsing file: {e}")
+            return []
 
 def elem_to_programme(elem):
     """
@@ -410,6 +410,8 @@ class Writer:
         """
         if element in programme:
             for item in programme[element]:
+                item = list(item.values())
+                
                 e = SubElement(p, element)
                 self.settext(e, item)
 
@@ -453,6 +455,8 @@ class Writer:
                 self.setattr(p, attr, programme[attr])
 
         for title in programme["title"]:
+            title = list(title.values())
+
             t = SubElement(p, "title")
             self.settext(t, title)
 
@@ -614,6 +618,8 @@ class Writer:
 
         # Display Name
         for display_name in channel["display-name"]:
+            display_name = list(display_name.values())
+    
             dn = SubElement(c, "display-name")
             self.settext(dn, display_name)
 
@@ -798,12 +804,12 @@ if __name__ == "__main__":
 
     channels = [
         {
-            "display-name": [("Channel 10 ELTV", "")],
+            "display-name": [{'name': 'Звезда', 'lang': ''}, {'name': 'Звезда HD', 'lang': ''}],
             "id": "C10eltv.zap2it.com",
             "url": ["http://www.eastlink.ca/"],
         },
         {
-            "display-name": [("Channel 11 CBHT", "en")],
+            "display-name": [{'name': 'dfgdfg', 'lang': 'en'}, {'name': 'dfgdfgdfg HD', 'lang': 'en'}],
             "icon": [
                 {"src": "http://tvlistings2.zap2it.com/tms_network_logos/cbc.gif"}
             ],

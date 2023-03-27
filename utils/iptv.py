@@ -1,12 +1,13 @@
+import datetime
+import gzip
+import os
 import re
 import time
-import config as cfg
+import urllib.request
 
 import requests
-import gzip
-import shutil
-import os
 
+import config as cfg
 import utils.common as common
 import utils.xmltv as xmltv
 from utils.db import *
@@ -29,7 +30,10 @@ class M3U_Parser:
             common.set_setting_bd("chenel_lupd", int(time.time()))
 
     def _get_m3u_list(self):
-        """Function to get m3u list from given url"""
+        """
+        It takes a URL, makes a request to that URL, and returns the response as a list of strings
+        :return: A list of strings
+        """
         timeout = 30
         try:
             request = requests.get(self.m3u_url, timeout=timeout)
@@ -46,6 +50,15 @@ class M3U_Parser:
             return []
             
     def _get_m3u_list_key(self, line, list, flag):
+        """
+        It takes a line from a m3u file, checks if it starts with #EXTINF: or #EXTGRP: or http, and if
+        it does, it extracts the relevant information from the line and returns it in a dictionary
+        
+        :param line: The line of the m3u file
+        :param list: This is the list that will be returned
+        :param flag: This is a flag that is used to check if the line starts with #EXTINF:
+        :return: The flag and the list.
+        """
         # Check if the line starts with #EXTINF:
         if line.startswith("#EXTINF:"):
             flag = 1
@@ -191,11 +204,20 @@ class M3U_Parser:
 
 class EPG_Parser:
     def __init__(self):
-        self.epg = {}
+        self.epg_channel = []
+        self.epg_channel_id = []
+        self.epg_program = []
         xmltv.locale = "Latin-1"
         xmltv.date_format = "%Y%m%d%H%M%S %Z"
 
     def _get_icon(self, icons=None):
+        """
+        It returns the first icon in the list of icons.
+        
+        :param icons: This is a list of dictionaries. Each dictionary contains the src key, which is the URL
+        of the icon
+        :return: A list of dictionaries.
+        """
         if not icons:
             return None
         chanel_icon = icons[0]["src"]
@@ -205,67 +227,133 @@ class EPG_Parser:
                 chanel_icon = icon["src"]
                 break
         return chanel_icon
+    
+    def download_epg(self, files):
+        """
+        Downloads epg files from given list of URLs
+        
+        :param files: A list of URLs to download the EPG files from
+        :return: A list of file paths to the downloaded epg files.
+        """
+        """Downloads epg files from given list of URLs"""
+        opener=urllib.request.build_opener()
+        opener.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
+        urllib.request.install_opener(opener)
+
+        epg_file = []
+        # Create epg folder if it doesn't exist
+        if not os.path.exists(os.path.join("./temp/epg")):
+            os.makedirs(os.path.join("./temp/epg"))
+        for file in files:
+            # Download file
+            print(f"Downloading EPG file: {file}")
+            urllib.request.urlretrieve(file, os.path.join("./temp/epg", os.path.basename(file)))
+            file = os.path.join("./temp/epg", os.path.basename(file))
+            # Unzip file if it is a .gz archive
+            if file.split(".")[-1] == "gz":
+                print(f"Unzipping EPG file: {file}")
+                new_name = common.gen_hash(5) + ".xml"
+                with gzip.open(file, "rb") as f_in:
+                    with open(os.path.join("./temp/epg", new_name), "wb") as f_out:
+                        f_out.write(f_in.read())
+                # Remove arhive
+                os.remove(file)
+                epg_file.append(os.path.join("./temp/epg", new_name))
+        return epg_file
+
+    def parse_channel(self, channel, channels_db):
+        """
+        It takes a channel from the XMLTV file and a list of channels from the database, and returns the
+        channel name, channel ID, channel database entry, and channel icon
+        
+        :param channel: The channel to parse
+        :param channels_db: A list of dictionaries containing the channel name and ID
+        :return: The name, id, channel_db, and icon are being returned.
+        """
+        for channel_db in channels_db:
+            for chanel_name in channel["display-name"]:
+                if chanel_name["name"] == channel_db["name"]:
+                    # Return the channel name, id, db and icon
+                    return chanel_name, channel["id"], channel_db, self._get_icon(channel["icon"])
+        # If no match is found, return None
+        return None, None, None, None
+        
+    def parse_programme(self, programmes):
+        """
+        The function iterates through each programme in the list of programmes and checks if the channel
+        of the programme is in the list of epg_channel_ids. If it is, the programme is appended to the
+        list of epg_programmes
+        
+        :param programmes: This is the list of programmes that we are iterating through
+        """
+        # Iterate through each programme in the list of programmes
+        for programme in programmes:
+            # Check if the channel of the programme is in the list of epg_channel_ids
+            if programme["channel"] in self.epg_channel_id:
+                # Append the programme to the list of epg_programmes
+                self.epg_program.append(programme)
+
+    def write_epg(self):
+        """
+        It writes the EPG data to a file.
+        """
+        # Generate date formatt "20030811003608 -0300"
+        date = datetime.datetime.now().strftime("%Y%m%d%H%M%S %Z")
+        # Create an XMLTV writer object
+        w = xmltv.Writer(
+            encoding="us-ascii",
+            date=date,
+            # source_info_url="http://www.funktronics.ca/python-xmltv",
+            # source_info_name="Funktronics",
+            # generator_info_name="python-xmltv",
+            # generator_info_url="http://www.funktronics.ca/python-xmltv",
+        )
+        # Add channels to the writer
+        for c in self.epg_channel:
+            w.addChannel(c)
+        # Add programs to the writer
+        for p in self.epg_program:
+            w.addProgramme(p)
+        # Write the XMLTV file
+        w.write(cfg.IPTV_EPG_LIST_OUT, pretty_print=True)
 
     def parse_xml(self):
-        files = cfg.IPTV_EPG_LIST_IN
-
+        """
+        It downloads the EPG files, parses them, and writes the output to a new file.
+        """
+        # Create a temporary folder
         common.create_temp_folder()
-
-        # for file in files:
-        # # create epg folder
-        # if not os.path.exists("./temp/epg"):
-        #     os.makedirs("./temp/epg")
-
-        # # download file
-        # get_file = requests.get(file)
-        # with open("./temp/epg/" + file.split("/")[-1], "wb") as f:
-        #     f.write(get_file.content)
-        # file = "./temp/epg/" + file.split("/")[-1]
-
-        # # unzip file
-        # new_name = common.gen_hash(5) + ".xml"
-        # if file.split(".")[-1] in "gz":
-        #     with gzip.open(file, "rb") as f_in:
-        #         with open("./temp/epg/" + new_name, "wb") as f_out:
-        #             shutil.copyfileobj(f_in, f_out)
-        #     # remove arhive
-        #     os.remove(file)
-        #     file = "./temp/epg/" + new_name
-
-        # parse xml
-        # chanels = xmltv.read_channels(open('./temp/epg/qmqev.xml', "r"))
-        # programmes = xmltv.read_programmes(open('./temp/epg/qmqev.xml', "r"))
-
-        chanels = xmltv.read_channels(open("./temp/epg/jhija.xml", "r"))
-
-        # get all channels name in db
+        # Get the list of EPG files to be parsed
+        files = self.download_epg(cfg.IPTV_EPG_LIST_IN)
+        #files = ["./temp/epg/fnkuo.xml"]
+        # Get all channels from the database
         channels_db = qb.select("iptv_channels").all()
-
-        i = 0
-
-        for channel in chanels:
-            # get channel id from db
-            channel_id = None
-            for channel_db in channels_db:
-                for chanel_name in channel["display-name"]:
-                    if chanel_name["name"] == channel_db["name"]:
-                        channel_id = channel["id"]
-                        # if icon count is 1
-                        icon = self._get_icon(channel["icon"])
-                        break
-                else:
-                    # Continue if the inner loop wasn't broken.
-                    continue
-                # Inner loop was broken, break the outer.
-                break
-
-            if channel_id:
-                self.epg[i] = {
-                    "chanel_id": channel_id,
-                    "name_db": channel_db["name"],
-                    "id_db": channel_db["channel_id"],
-                    "icon": icon,
-                    "programmes": [],
-                }
-                i += 1
-        print(self.epg)
+        # Iterate through each file
+        for file in files:
+            print(f"Parsing EPG file: {file}")
+            # Read the channels and programmes from the file
+            chanels = xmltv.read_channels(open(file, "r"))
+            programmes = xmltv.read_programmes(open(file, "r"))
+            print("Parsing channels...")
+            # Iterate through each channel
+            for channel in chanels:
+                # Parse the channel
+                chanel_name, channel_id, channel_db, icon = self.parse_channel(channel, channels_db)
+                # If the channel is valid
+                if channel_id:
+                    # Remove the data from the channels_db
+                    channels_db.remove(channel_db)
+                    # Update the channel in the database
+                    qb.update("iptv_channels", {"epg_channel_id": channel_id, "stream_icon": icon}).where([["name", "=", chanel_name["name"]]]).go()
+                    # Append the channel to the epg_channel list
+                    self.epg_channel.append(channel)
+                    # Append the channel_id to the epg_channel_id list
+                    self.epg_channel_id.append(channel_id)
+            print("Parsing programmes...")
+            # Parse the programmes
+            self.parse_programme(programmes)
+            # Remove epg files
+            os.remove(os.path.join("./temp/epg", os.path.basename(file)))
+        print("Writing XML file...")
+        # Write the EPG file
+        self.write_epg()

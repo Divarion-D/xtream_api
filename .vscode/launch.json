@@ -30,6 +30,14 @@
             "program": "${workspaceFolder}/test.py",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "xmltv",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/utils/xmltv.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
