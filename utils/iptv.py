@@ -40,9 +40,8 @@ class M3U_Parser:
             request = requests.get(self.m3u_url, timeout=timeout)
             if request.status_code == 200:
                 return request.text.splitlines()
-            else:
-                print("Error get m3u list")
-                return []
+            print("Error get m3u list")
+            return []
         except requests.exceptions.Timeout:
             print("Playlist request timeout")
             return []
@@ -253,7 +252,7 @@ class EPG_Parser:
             # Unzip file if it is a .gz archive
             if file.split(".")[-1] == "gz":
                 print(f"Unzipping EPG file: {file}")
-                new_name = common.gen_hash(5) + ".xml"
+                new_name = f"{common.gen_hash(5)}.xml"
                 with gzip.open(file, "rb") as f_in:
                     with open(os.path.join("./temp/epg", new_name), "wb") as f_out:
                         f_out.write(f_in.read())
