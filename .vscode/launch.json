@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: текущий файл",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Python: FastAPI",
             "type": "python",
             "request": "launch",
@@ -20,14 +28,6 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/api.py",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
-            "name": "test",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/test.py",
             "console": "integratedTerminal",
             "justMyCode": true
         },

@@ -4,6 +4,7 @@ import os
 import re
 import time
 import urllib.request
+import aiohttp
 
 import requests
 
@@ -357,3 +358,12 @@ class EPG_Parser:
         print("Writing XML file...")
         # Write the EPG file
         self.write_epg()
+
+
+class Help_iptv:
+    @staticmethod
+    async def receive_stream(url):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                async for dataBytes in response.content.iter_chunked(1024):
+                    yield dataBytes

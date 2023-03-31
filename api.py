@@ -9,7 +9,7 @@ import utils.iptv as iptv
 import utils.user as user
 import utils.video as video
 from utils.db import *
-from utils.streamer import Streamer
+from utils.iptv import Help_iptv
 import config as cfg
 
 qb = QueryBuilder(DataBase(), "data.db")
@@ -84,9 +84,7 @@ async def api(username: str, password: str, action: Union[str, None] = None):
 
 
 @app.get("/live/{username}/{password}/{stream_id}.{ext}")
-async def live(
-    username: str, password: str, stream_id: str, request: Request, response: Response
-):
+async def live(username: str, password: str, stream_id: str, request: Request, response: Response):
     user_data = user.auth(username, password)
     if user_data["error"] == 1:
         # return status code
@@ -95,7 +93,7 @@ async def live(
         )
 
     url = iptv_data.get_channel_url(stream_id)
-    response = StreamingResponse(Streamer.receive_stream(url), media_type="video/mp2t")
+    response = StreamingResponse(Help_iptv.receive_stream(url), media_type="video/mp2t")
     response.set_cookie(key="channel_path", value=url)
     return response
 
@@ -113,7 +111,7 @@ async def live(username: str, password: str, file_path: str, request: Request):
     channel_path = request.cookies.get("channel_path")
     channel_path = channel_path.replace(channel_path.split("/")[-1], "")
     url = channel_path + file_path
-    return StreamingResponse(Streamer.receive_stream(url), media_type="video/mp2t")
+    return StreamingResponse(Help_iptv.receive_stream(url), media_type="video/mp2t")
 
 
 @app.get("/xmltv.php")
@@ -125,7 +123,7 @@ async def epg(username: str, password: str):
             status_code=user_data["error_code"], detail=f"{user_data['error_message']}"
         )
 
-    file = open("epg.xml", "rb")
+    file = open(cfg.IPTV_EPG_LIST_OUT, "rb")
     return StreamingResponse(file, media_type="application/xml")
 
 
