@@ -1,11 +1,11 @@
 # Server config
 SERVER_IP = "192.168.0.100" # server ip
-SERVER_PORT = 8000 # server port
+SERVER_PORT = 8001 # server port
 
 # IPTV config
-IPTV_LIST_URL = "https://raw.githubusercontent.com/Divarion-D/xtream_api/master/tests/test.m3u" # url to m3u playlist
+IPTV_LIST_URL = "http://portal.ruiptv.ru/group.m3u" # url to m3u playlist
 IPTV_EPG_LIST_IN = [
-    "https://iptvx.one/epg/epg.xml.gz",
+    "http://programtv.ru/xmltv.xml.gz",
     "http://epg.it999.ru/epg2.xml.gz"
 ] # url to epg xml.gz
 IPTV_EPG_LIST_OUT = "epg.xml" # file name for out cache epg

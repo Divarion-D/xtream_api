@@ -252,10 +252,11 @@ class EPG_Parser:
             # Unzip file if it is a .gz archive
             if file.split(".")[-1] == "gz":
                 print(f"Unzipping EPG file: {file}")
-                new_name = f"{common.gen_hash(5)}.xml"
+                new_name = f"{common.gen_hash(8)}.xml"
                 with gzip.open(file, "rb") as f_in:
-                    with open(os.path.join("./temp/epg", new_name), "wb") as f_out:
-                        f_out.write(f_in.read())
+                    data = f_in.read()
+                with open(os.path.join("./temp/epg", new_name), "wb") as f_out:
+                    f_out.write(data)
                 # Remove arhive
                 os.remove(file)
                 epg_file.append(os.path.join("./temp/epg", new_name))
@@ -332,8 +333,9 @@ class EPG_Parser:
         for file in files:
             print(f"Parsing EPG file: {file}")
             # Read the channels and programmes from the file
-            chanels = xmltv.read_channels(open(file, "r"))
-            programmes = xmltv.read_programmes(open(file, "r"))
+            file_parsed = xmltv.read_file(open(file, "r"))
+            chanels = xmltv.read_channels(None, file_parsed)
+            programmes = xmltv.read_programmes(None, file_parsed)
             print("Parsing channels...")
             # Iterate through each channel
             for channel in chanels:

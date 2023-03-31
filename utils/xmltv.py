@@ -29,6 +29,18 @@ date_format = "%Y%m%d%H%M%S %Z"
 date_format_notz = "%Y%m%d%H%M%S"
 
 
+def set_text(dict, name, elem, with_lang=True):
+    """
+    set_text(dict, name, elem, with_lang=True) -> None
+
+    Set 'dict'['name'] to the text found in 'name', if found under 'elem'. If
+    'with_lang' is 'True', a tuple of ('text', 'lang') is set
+    """
+    node = elem.find(name)
+    if node is not None:
+        dict[name] = (node.text, node.get("lang", "")) if with_lang else node.text
+
+
 def set_attrs(dict, elem, attrs):
     """
     set_attrs(dict, elem, attrs) -> None
@@ -70,18 +82,6 @@ def append_text(dict, name, elem, with_lang=True):
             dict[name].append({"name": node.text})
 
 
-def set_text(dict, name, elem, with_lang=True):
-    """
-    set_text(dict, name, elem, with_lang=True) -> None
-
-    Set 'dict'['name'] to the text found in 'name', if found under 'elem'. If
-    'with_lang' is 'True', a tuple of ('text', 'lang') is set
-    """
-    node = elem.find(name)
-    if node is not None:
-        dict[name] = (node.text, node.get("lang", "")) if with_lang else node.text
-
-
 def append_icons(dict, elem):
     """
     append_icons(dict, elem) -> None
@@ -108,21 +108,6 @@ def elem_to_channel(elem):
 
     return d
 
-
-def read_channels(fp=None):
-    """
-    read_channels(fp=None) -> list
-    Return a list of channel dictionaries from file object 'fp' or the
-    ElementTree 'tree'
-    """
-    if fp:
-        try:
-            et = ElementTree()
-            tree = et.parse(fp)
-            return (elem_to_channel(elem) for elem in tree.findall("channel"))
-        except Exception as e:
-            print(f"Error parsing file: {e}")
-            return []
 
 def elem_to_programme(elem):
     """
@@ -255,22 +240,26 @@ def elem_to_programme(elem):
     return d
 
 
-def read_programmes(fp=None, tree=None):
+def read_file(fp=None):
     """
-    read_programmes(fp=None, tree=None) -> list
-
-    Return a list of programme dictionaries from file object 'fp' or the
-    ElementTree 'tree'
+    This function takes a file pointer and returns an ElementTree object
+    
+    :param fp: The file path to the XML file
+    :return: A list of dictionaries.
     """
     if fp:
-        et = ElementTree()
-        tree = et.parse(fp)
-    return [elem_to_programme(elem) for elem in tree.findall("programme")]
+        try:
+            et = ElementTree()
+            tree = et.parse(fp)
+            return tree
+        except Exception as e:
+            print(f"Error parsing file: {e}")
+            return []
 
 
 def read_data(fp=None, tree=None):
     """
-    read_data(fp=None, tree=None) -> dict
+    read_data(tree=None) -> dict
 
     Get the source and other info from file object fp or the ElementTree
     'tree'
@@ -293,6 +282,32 @@ def read_data(fp=None, tree=None):
         ),
     )
     return d
+
+
+def read_channels(fp=None, tree=None):
+    """
+    It takes a tree and returns a generator that yields a channel for each channel element in the tree
+    
+    :param tree: The ElementTree object to read the channels from
+    :return: A generator object.
+    """
+    if fp:
+        et = ElementTree()
+        tree = et.parse(fp)
+    return (elem_to_channel(elem) for elem in tree.findall("channel"))
+
+
+def read_programmes(fp=None, tree=None):
+    """
+    read_programmes(fp=None, tree=None) -> list
+
+    Return a list of programme dictionaries from file object 'fp' or the
+    ElementTree 'tree'
+    """
+    if fp:
+        et = ElementTree()
+        tree = et.parse(fp)
+    return [elem_to_programme(elem) for elem in tree.findall("programme")]
 
 
 def indent(elem, level=0):
