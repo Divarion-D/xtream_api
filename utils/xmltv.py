@@ -250,8 +250,7 @@ def read_file(fp=None):
     if fp:
         try:
             et = ElementTree()
-            tree = et.parse(fp)
-            return tree
+            return et.parse(fp)
         except Exception as e:
             print(f"Error parsing file: {e}")
             return []
