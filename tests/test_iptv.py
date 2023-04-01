@@ -1,7 +1,8 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import requests
+import asyncio
 
 import config as cfg  # assuming cfg is imported
 import utils.iptv as iptv
@@ -12,34 +13,27 @@ epg_obj = iptv.EPG_Parser()
 ####################### M3U #######################
 
 class TestGetM3uListKey(unittest.TestCase):
-    def test_starts_with_extinf(self):
-        line = "#EXTINF:-1 tvg-logo=\"http://example.com/logo.png\" group-title=\"Group Title\" tvg-id=\"123\" tvg-name=\"Channel Name\",Channel Name"
+    async def test_starts_with_extinf(self):
         expected_output = (1, {'stream_icon': 'http://example.com/logo.png', 'name': 'Channel Name', 'group_title': 'Group Title', 'epg_channel_id': '123'})
-        list = {}
-        flag = 0
+        line = "#EXTINF:-1 tvg-logo=\"http://example.com/logo.png\" group-title=\"Group Title\" tvg-id=\"123\" tvg-name=\"Channel Name\",Channel Name"
 
-        result = m3u_obj._get_m3u_list_key(line, list, flag)
-        print(result)
+        result = await m3u_obj._get_m3u_list_key(line, {}, 0)
 
         self.assertEqual(result, expected_output)
 
-    def test_starts_with_extgrp(self):
+    async def test_starts_with_extgrp(self):
         line = "#EXTGRP:Group Title"
         expected_output = (0, {'group_title': 'Group Title'})
-        list = {}
-        flag = 0
 
-        result = m3u_obj._get_m3u_list_key(line, list, flag)
+        result = await m3u_obj._get_m3u_list_key(line, {}, 0)
 
         self.assertEqual(result, expected_output)
 
-    def test_starts_with_http(self):
+    async def test_starts_with_http(self):
         line = "http://example.com/live/channel1.m3u8"
         expected_output = (0, {'url': 'http://example.com/live/channel1.m3u8'})
-        list = {}
-        flag = 1
 
-        result = m3u_obj._get_m3u_list_key(line, list, flag)
+        result = await m3u_obj._get_m3u_list_key(line, {}, 0)
 
         self.assertEqual(result, expected_output)
 

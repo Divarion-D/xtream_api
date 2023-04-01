@@ -5,6 +5,7 @@ import re
 import time
 import urllib.request
 import aiohttp
+import asyncio
 
 import requests
 
@@ -20,15 +21,17 @@ class M3U_Parser:
     def __init__(self, m3u_url):
         self.m3u_url = m3u_url
         self.m3u_list = self._get_m3u_list()
-        channels_lupd = common.get_setting_db("chenel_lupd")
+
+    async def upd_playlist(self):
+        channels_lupd = common.get_setting_db("chenel_upd")
         channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
         if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_LIST:
             # clear channels
             qb.delete("iptv_channels")
             # clear categories
             qb.delete("iptv_categories")
-            self.parse_m3u()
-            common.set_setting_bd("chenel_lupd", int(time.time()))
+            await self.parse_m3u()
+            common.set_setting_bd("chenel_upd", int(time.time()))
 
     def _get_m3u_list(self):
         """
@@ -49,7 +52,7 @@ class M3U_Parser:
             print(e)
             return []
             
-    def _get_m3u_list_key(self, line, list, flag):
+    async def _get_m3u_list_key(self, line, data_list, flag):
         """
         It takes a line from a m3u file, checks if it starts with #EXTINF: or #EXTGRP: or http, and if
         it does, it extracts the relevant information from the line and returns it in a dictionary
@@ -63,25 +66,25 @@ class M3U_Parser:
         if line.startswith("#EXTINF:"):
             flag = 1
             # Get the stream icon
-            list["stream_icon"] = (
+            data_list["stream_icon"] = (
                 re.search('tvg-logo="(.+?)"', line)[1].strip()
                 if "tvg-logo" in line
                 else ""
             )
             # Get the name
-            list["name"] = (
+            data_list["name"] = (
                 re.search('tvg-name="(.+?)"', line)[1].strip()
                 if "tvg-name" in line
                 else re.search(",(.+)", line)[1].strip()
             )
             # Get the group title
-            list["group_title"] = (
+            data_list["group_title"] = (
                 re.search('group-title="(.+?)"', line)[1].strip()
                 if "group-title" in line
                 else ""
             )
             # Get the epg channel id
-            list["epg_channel_id"] = (
+            data_list["epg_channel_id"] = (
                 re.search('tvg-id="(.+?)"', line)[1].strip()
                 if "tvg-id" in line
                 else ""
@@ -95,14 +98,14 @@ class M3U_Parser:
             # list["tvg_radio"] = re.search('tvg-radio="(.+?)"', line).group(1) if 'tvg-radio' in line else None
         # Check if the line starts with #EXTGRP:
         elif line.startswith("#EXTGRP:"):
-            list["group_title"] = re.search("#EXTGRP:(.+)", line)[1]
+            data_list["group_title"] = re.search("#EXTGRP:(.+)", line)[1]
         # Check if the line starts with http
         elif line.startswith("http"):
-            list["url"] = line
+            data_list["url"] = line
             flag = 0
-        return flag, list
+        return flag, data_list
 
-    def parse_m3u(self):
+    async def parse_m3u(self):
         """
         It parses an M3U file and inserts the data into a database
         """
@@ -110,7 +113,7 @@ class M3U_Parser:
         data_list = {}
         flag = 1
         for line in self.m3u_list:
-            flag, data_list = self._get_m3u_list_key(line, data_list, flag)
+            flag, data_list = await self._get_m3u_list_key(line, data_list, flag)
             if flag == 0 and data_list:
                 # remove '
                 data_list["name"] = data_list["name"].replace("'", "")
@@ -209,6 +212,13 @@ class EPG_Parser:
         self.epg_program = []
         xmltv.locale = "Latin-1"
         xmltv.date_format = "%Y%m%d%H%M%S %Z"
+
+    async def upd_epg(self):
+        channels_lupd = common.get_setting_db("epg_upd")
+        channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
+        if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_EPG:
+            await self.parse_xml()
+            common.set_setting_bd("epg_upd", int(time.time()))
 
     def _get_icon(self, icons=None):
         """
@@ -318,14 +328,14 @@ class EPG_Parser:
         # Write the XMLTV file
         w.write(cfg.IPTV_EPG_LIST_OUT, pretty_print=True)
 
-    def parse_xml(self):
+    async def parse_xml(self):
         """
         It downloads the EPG files, parses them, and writes the output to a new file.
         """
         # Create a temporary folder
         common.create_temp_folder()
         # Get the list of EPG files to be parsed
-        files = self.download_epg(cfg.IPTV_EPG_LIST_IN)
+        files = await asyncio.to_thread(self.download_epg, cfg.IPTV_EPG_LIST_IN)
         #files = ["./temp/epg/fnkuo.xml"]
         # Get all channels from the database
         channels_db = qb.select("iptv_channels").all()
@@ -333,9 +343,9 @@ class EPG_Parser:
         for file in files:
             print(f"Parsing EPG file: {file}")
             # Read the channels and programmes from the file
-            file_parsed = xmltv.read_file(open(file, "r"))
-            chanels = xmltv.read_channels(None, file_parsed)
-            programmes = xmltv.read_programmes(None, file_parsed)
+            file_parsed = await asyncio.to_thread(xmltv.read_file, open(file, "r"))
+            chanels = await asyncio.to_thread(xmltv.read_channels, None, file_parsed)
+            programmes = await asyncio.to_thread(xmltv.read_programmes, None, file_parsed)
             print("Parsing channels...")
             # Iterate through each channel
             for channel in chanels:

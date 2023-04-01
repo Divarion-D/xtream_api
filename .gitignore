@@ -218,3 +218,4 @@ venv.bak/
 epg.xml
 temp
 channels.txt
+data.db-journal

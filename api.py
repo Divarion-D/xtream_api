@@ -1,16 +1,18 @@
 from typing import Union
 
 import uvicorn
+import time
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
+from concurrent.futures import ProcessPoolExecutor
 
 import utils.common as common
-import utils.iptv as iptv
 import utils.user as user
 import utils.video as video
 from utils.db import *
-from utils.iptv import Help_iptv
+from utils.iptv import Help_iptv, M3U_Parser, EPG_Parser
 import config as cfg
+import asyncio
 
 qb = QueryBuilder(DataBase(), "data.db")
 common.add_tables()
@@ -22,9 +24,29 @@ if not qb.select("users").where([["is_admin", "=", 1]]).all():
     admin_password = input("Enter admin password: ")
     user.create_admin(admin_username, admin_password)
 
-iptv_data = iptv.M3U_Parser(cfg.IPTV_LIST_URL)
+iptv_data = M3U_Parser(cfg.IPTV_LIST_URL)
+tvepg = EPG_Parser()
 
 app = FastAPI()
+
+
+def update():
+    while True:
+        time.sleep(10)
+        asyncio.run(iptv_data.upd_playlist())
+        asyncio.run(tvepg.upd_epg())
+
+
+@app.on_event("startup")
+async def on_startup():
+    app.state.executor = ProcessPoolExecutor()
+    app.state.loop = asyncio.get_event_loop()
+    app.state.loop.run_in_executor(app.state.executor, update)
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    app.state.executor.shutdown()
 
 # API XTREAM-CODES
 ############################################################################################################
@@ -150,4 +172,5 @@ if __name__ == "__main__":
 
     ip = cfg.SERVER_IP
     port = cfg.SERVER_PORT
+
     uvicorn.run("api:app", host=ip, port=int(port), debug=True, reload=True)
