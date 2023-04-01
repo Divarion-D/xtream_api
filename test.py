@@ -5,7 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 async def main():
     i = 0
     while True:
-        print('Hello' + str(i))
+        print(f'Hello{str(i)}')
         await asyncio.sleep(1)
         i += 1
 
