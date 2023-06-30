@@ -1,5 +1,5 @@
 aiohttp==3.8.4
 fastapi==0.95.0
 bcrypt==4.0.0
-requests==2.25.1
+requests==2.31.0
 uvicorn==0.13.3
