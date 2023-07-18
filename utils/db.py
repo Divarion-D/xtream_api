@@ -26,7 +26,7 @@ class DataBase(metaclass=MetaSingleton):
     cursor = None
 
     def connect(self, db_name=""):
-        if db_name != "":
+        if db_name is not "":
             self.db_name = db_name
 
         if self.conn is None:
@@ -46,7 +46,7 @@ class QueryBuilder:
         "<",
         ">=",
         "<=",
-        "!=",
+        "is not",
         "LIKE",
         "NOT LIKE",
         "IN",
@@ -145,7 +145,7 @@ class QueryBuilder:
         new_sql = sql or self._sql
 
         if new_sql:
-            new_sql += ";" if new_sql[-1] != ";" else ""
+            new_sql += ";" if new_sql[-1] is not ";" else ""
 
         if not sql:
             self._sql = new_sql
@@ -376,7 +376,7 @@ class QueryBuilder:
         else:
             self._sql += f" WHERE {conditions['sql']}"
 
-        if isinstance(conditions["values"], list) and conditions["values"] != []:
+        if isinstance(conditions["values"], list) and conditions["values"] is not []:
             self._params += tuple(conditions["values"])
 
         return self
@@ -390,7 +390,7 @@ class QueryBuilder:
 
         self._sql += f" HAVING {conditions['sql']}"
 
-        if isinstance(conditions["values"], list) and conditions["values"] != []:
+        if isinstance(conditions["values"], list) and conditions["values"] is not []:
             self._params += tuple(conditions["values"])
 
         return self

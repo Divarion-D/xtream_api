@@ -1,20 +1,21 @@
 ## How to use
 ### Main public methods
 - `get_sql()` returns SQL query string which will be executed
-- `get_params()` returns an array of parameters for a query
+- `get_params()` returns a tuple of parameters for a query
 - `get_result()` returns query's result
 - `get_count()` returns result's rows count
 - `get_error()` returns `True` if an error is had
 - `get_error_message()` returns an error message if an error is had
-- `set_error(message)` sets `_error` to `True` and `_error_essage`
+- `set_error(message)` sets `_error` to `True` and `_error_message`
 - `get_first()` returns the first item of results
 - `get_last()` returns the last item of results
-- `reset()` resets state to default values (except PDO property)
+- `reset()` resets state to default values
 - `all()` executes SQL query and returns all rows of result (`fetchall()`)
 - `one()` executes SQL query and returns the first row of result (`fetchone()`)
-- `column(col_index)` executes SQL query and returns the needed column of result, `col_index` is `0` by default
-- `pluck(key_index, col_index)` executes SQL query and returns a list of tuples (the key (usually ID) and the needed column of result), `key_index` is `0` and `col_index` is `1` by default
+- `column(col)` executes SQL query and returns the needed column of result by its index or name, `col` is `0` by default
+- `pluck(key, col)` executes SQL query and returns a list of tuples/dicts (the key (usually ID) and the needed column of result) by its indexes or names, `key` is `0` and `col` is `1` by default
 - `go()` this method is for non `SELECT` queries. it executes SQL query and returns nothing (but returns the last inserted row ID for `INSERT` method)
+- `exists()` returns `True` if SQL query has a row and `False` if it hasn't
 - `count()` prepares a query with SQL `COUNT(*)` function and executes it
 - `query(sql, params, fetch_type, col_index)` executes prepared `sql` with `params`, it can be used for custom queries
 - 'SQL' methods are presented in [Usage section](#usage-examples)
@@ -23,7 +24,14 @@
 ```python
 from simple_query_builder import *
 
-qb = QueryBuilder(DataBase(), 'my_db.db')
+# if you want to get results as a list of dictionaries (by default since 0.3.5)
+qb = QueryBuilder(DataBase(), 'my_db.db') # result_dict=True, print_errors=False
+
+# or if you want to get results as a list of tuples (since 0.3.5)
+qb = QueryBuilder(DataBase(), 'my_db.db', result_dict=False)
+
+# for printing errors into terminal (since 0.3.5)
+qb = QueryBuilder(DataBase(), 'my_db.db', print_errors=True)
 ```
 ### Usage examples
 - Select all rows from a table
@@ -56,17 +64,40 @@ SELECT * FROM `users` WHERE (`id` > 1) AND (`group_id` = 2);
 results = qb.select('users').like(['name', '%John%']).all()
 # or
 results = qb.select('users').where([['name', 'LIKE', '%John%']]).all()
+# or since 0.3.5
+results = qb.select('users').like('name', '%John%').all()
 ```
 ```sql
 SELECT * FROM `users` WHERE (`name` LIKE '%John%');
 ```
 ```python
-results = qb.select('users').notLike(['name', '%John%']).all()
+results = qb.select('users').not_like(['name', '%John%']).all()
 # or
 results = qb.select('users').where([['name', 'NOT LIKE', '%John%']]).all()
+# or since 0.3.5
+results = qb.select('users').not_like('name', '%John%').all()
 ```
 ```sql
 SELECT * FROM `users` WHERE (`name` NOT LIKE '%John%');
+```
+- Select a row with a `IS NULL` and `IS NOT NULL` condition (since 0.3.5)
+```python
+results = qb.select('users').is_null('phone').all()
+# or
+results = qb.select('users').where([['phone', 'is null']]).all()
+```
+```sql
+SELECT * FROM `users` WHERE (`phone` IS NULL);
+```
+```python
+results = qb.select('customers').is_not_null('address').all()
+# or
+results = qb.select('customers').not_null('address').all()
+# or
+results = qb.select('customers').where([['address', 'is not null']]).all()
+```
+```sql
+SELECT * FROM `customers` WHERE (`address` IS NOT NULL);
 ```
 - Select rows with `OFFSET` and `LIMIT`
 ```python
@@ -300,6 +331,8 @@ qb.delete('comments')\
 DELETE FROM `comments` WHERE `user_id` = 10;
 ```
 - Truncate a table
+
+This method will be moved to another class
 ```python
 qb.truncate('users').go()
 ```
@@ -307,6 +340,8 @@ qb.truncate('users').go()
 TRUNCATE TABLE `users`;
 ```
 - Drop a table
+
+This method will be moved to another class
 ```python
 qb.drop('temporary').go()
 ```

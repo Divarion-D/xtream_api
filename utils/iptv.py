@@ -12,7 +12,7 @@ import requests
 import config as cfg
 import utils.common as common
 import utils.xmltv as xmltv
-from utils.db import *
+from utils.db import QueryBuilder, DataBase
 
 qb = QueryBuilder(DataBase(), "data.db")
 
@@ -24,7 +24,7 @@ class M3U_Parser:
 
     async def upd_playlist(self):
         channels_lupd = common.get_setting_db("chenel_upd")
-        channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
+        channels_lupd = int(channels_lupd) if channels_lupd is not "" else 0
         if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_LIST:
             # clear channels
             qb.delete("iptv_channels")
@@ -51,12 +51,12 @@ class M3U_Parser:
         except requests.exceptions.RequestException as e:
             print(e)
             return []
-            
+
     async def _get_m3u_list_key(self, line, data_list, flag):
         """
         It takes a line from a m3u file, checks if it starts with #EXTINF: or #EXTGRP: or http, and if
         it does, it extracts the relevant information from the line and returns it in a dictionary
-        
+
         :param line: The line of the m3u file
         :param list: This is the list that will be returned
         :param flag: This is a flag that is used to check if the line starts with #EXTINF:
@@ -215,7 +215,7 @@ class EPG_Parser:
 
     async def upd_epg(self):
         channels_lupd = common.get_setting_db("epg_upd")
-        channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
+        channels_lupd = int(channels_lupd) if channels_lupd is not "" else 0
         if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_EPG:
             await self.parse_xml()
             common.set_setting_bd("epg_upd", int(time.time()))
@@ -223,7 +223,7 @@ class EPG_Parser:
     def _get_icon(self, icons=None):
         """
         It returns the first icon in the list of icons.
-        
+
         :param icons: This is a list of dictionaries. Each dictionary contains the src key, which is the URL
         of the icon
         :return: A list of dictionaries.
@@ -237,17 +237,17 @@ class EPG_Parser:
                 chanel_icon = icon["src"]
                 break
         return chanel_icon
-    
+
     def download_epg(self, files):
         """
         Downloads epg files from given list of URLs
-        
+
         :param files: A list of URLs to download the EPG files from
         :return: A list of file paths to the downloaded epg files.
         """
         """Downloads epg files from given list of URLs"""
-        opener=urllib.request.build_opener()
-        opener.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
         urllib.request.install_opener(opener)
 
         epg_file = []
@@ -276,7 +276,7 @@ class EPG_Parser:
         """
         It takes a channel from the XMLTV file and a list of channels from the database, and returns the
         channel name, channel ID, channel database entry, and channel icon
-        
+
         :param channel: The channel to parse
         :param channels_db: A list of dictionaries containing the channel name and ID
         :return: The name, id, channel_db, and icon are being returned.
@@ -288,13 +288,13 @@ class EPG_Parser:
                     return chanel_name, channel["id"], channel_db, self._get_icon(channel["icon"])
         # If no match is found, return None
         return None, None, None, None
-        
+
     def parse_programme(self, programmes):
         """
         The function iterates through each programme in the list of programmes and checks if the channel
         of the programme is in the list of epg_channel_ids. If it is, the programme is appended to the
         list of epg_programmes
-        
+
         :param programmes: This is the list of programmes that we are iterating through
         """
         # Iterate through each programme in the list of programmes

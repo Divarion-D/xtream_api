@@ -4,7 +4,7 @@ import time
 import os
 
 import config as cfg
-from utils.db import *
+from utils.db import QueryBuilder, DataBase
 
 qb = QueryBuilder(DataBase(), "data.db")
 
@@ -35,10 +35,15 @@ def add_tables():
     qb.query(
         """CREATE TABLE IF NOT EXISTS users ("user_id" INTEGER PRIMARY KEY AUTOINCREMENT, "username" TEXT, "password" TEXT, "email" TEXT, "is_admin" INTEGER DEFAULT 0, "is_trial" INTEGER DEFAULT 0, "status" TEXT, "exp_date" TEXT, "max_connections" INTEGER DEFAULT 1, "created_at" INTEGER DEFAULT 0, "active_cons" INTEGER DEFAULT 0, "allowed_output_formats" TEXT, "auth_hash" TEXT)"""
     )
-    # create table video_categories
+    # create table films_categories
     qb.reset()  # reset query builder
     qb.query(
-        """CREATE TABLE IF NOT EXISTS video_categories ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "name" TEXT, "parent_id" INTEGER)"""
+        """CREATE TABLE IF NOT EXISTS films_categories ("category_id" INTEGER PRIMARY KEY AUTOINCREMENT, "category_name" TEXT, "parent_id" INTEGER)"""
+    )
+    # create table series_categories
+    qb.reset()  # reset query builder
+    qb.query(
+        """CREATE TABLE IF NOT EXISTS series_categories ("category_id" INTEGER PRIMARY KEY AUTOINCREMENT, "category_name" TEXT, "parent_id" INTEGER)"""
     )
 
 
@@ -76,6 +81,7 @@ def get_setting_db(name):
 
 def set_setting_bd(name, value):
     qb.update("settings", {"value": value}).where([["name", "=", name]]).go()
+
 
 def create_temp_folder():
     if not os.path.exists("./temp"):

@@ -1,16 +1,15 @@
 import unittest
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import requests
-import asyncio
-
-import config as cfg  # assuming cfg is imported
 import utils.iptv as iptv
 
 m3u_obj = iptv.M3U_Parser("https://raw.githubusercontent.com/Divarion-D/xtream_api/master/tests/test.m3u")
 epg_obj = iptv.EPG_Parser()
 
+
 ####################### M3U #######################
+
 
 class TestGetM3uListKey(unittest.TestCase):
     async def test_starts_with_extinf(self):
@@ -37,34 +36,36 @@ class TestGetM3uListKey(unittest.TestCase):
 
         self.assertEqual(result, expected_output)
 
+
 class TestM3uList(unittest.TestCase):
 
     @patch('requests.get')
     def test_get_m3u_list_success(self, mock_get):
         mock_get.return_value.status_code = 200
         mock_get.return_value.text = 'channel1\nchannel2\nchannel3\n'
-        
+
         result = m3u_obj._get_m3u_list()
-        
+
         self.assertEqual(result, ['channel1', 'channel2', 'channel3'])
-    
+
     @patch('requests.get')
     def test_get_m3u_list_timeout(self, mock_get):
         mock_get.side_effect = requests.exceptions.Timeout
-        
+
         result = m3u_obj._get_m3u_list()
-        
+
         self.assertEqual(result, [])
 
     @patch('requests.get')
     def test_get_m3u_list_error(self, mock_get):
         mock_get.side_effect = requests.exceptions.RequestException('Test error')
-        
+
         result = m3u_obj._get_m3u_list()
-        
+
         self.assertEqual(result, [])
 
 ####################### EPG #######################
+
 
 class TestGetIcon(unittest.TestCase):
     def test_single_icon(self):
@@ -75,6 +76,7 @@ class TestGetIcon(unittest.TestCase):
 
     def test_empty_icons(self):
         self.assertEqual(epg_obj._get_icon([]), None)
+
 
 class TestParseChannel(unittest.TestCase):
 
@@ -127,6 +129,7 @@ class TestParseChannel(unittest.TestCase):
         self.assertIsNone(id)
         self.assertIsNone(channel_db)
         self.assertIsNone(icon)  
+
 
 if __name__ == '__main__':
     unittest.main()

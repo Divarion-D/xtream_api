@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 import utils.common as common
 import utils.user as user
 import utils.video as video
-from utils.db import *
+from utils.db import QueryBuilder, DataBase
 from utils.iptv import Help_iptv, M3U_Parser, EPG_Parser
 import config as cfg
 import asyncio
@@ -51,9 +51,10 @@ async def on_shutdown():
 # API XTREAM-CODES
 ############################################################################################################
 
+
 @app.get("/player_api.php")
 async def api(username: str, password: str, action: Union[str, None] = None):
-    if username != None and password != None and action is None:
+    if username is not None and password is not None and action is None:
         user_data = user.auth(username, password)
         if user_data["error"] == 1:
             # return status code 401
@@ -66,7 +67,7 @@ async def api(username: str, password: str, action: Union[str, None] = None):
             "server_info": common.server_info(),
         }
 
-    if action != None:
+    if action is not None:
         user_data = user.auth(username, password)
         if user_data["error"] == 1:
             # return status code
@@ -77,32 +78,14 @@ async def api(username: str, password: str, action: Union[str, None] = None):
 
         if action == "get_live_categories":
             return iptv_data.get_all_categories()
-        elif action == "get_vod_categories":
-            return video.get_all_categories()
-        elif action == "get_series_categories":
-            return {"live_streams": "ok"}
         elif action == "get_live_streams":
             return iptv_data.get_all_channels()
+        elif action == "get_vod_categories":
+            return video.get_films_categories()
+        elif action == "get_series_categories":
+            return video.get_series_categories()
         elif action == "get_vod_streams":
-            return [
-                {
-                    "num": 1,
-                    "name": "\u042f \u043a\u0440\u0430\u0441\u043d\u0435\u044e",
-                    "title": "\u042f \u043a\u0440\u0430\u0441\u043d\u0435\u044e",
-                    "year": "",
-                    "stream_type": "movie",
-                    "stream_id": 4,
-                    "stream_icon": "https:\/\/www.themoviedb.org\/t\/p\/w600_and_h900_bestv2\/1pCx1fyB4w0tCtuhTFfMxqhiHZa.jpg",
-                    "rating": 12,
-                    "rating_5based": 6,
-                    "added": "1660638664",
-                    "category_id": "4",
-                    "category_ids": [4],
-                    "container_extension": "mp4",
-                    "custom_sid": "",
-                    "direct_source": "http:\/\/176.124.192.118:80\/play\/DXMkxo_35hRPoig0TFWxfkASgpnTIHPuFfKUMmcmUOI",
-                }
-            ]
+            return video.get_all_films()
 
 
 @app.get("/live/{username}/{password}/{stream_id}.{ext}")
@@ -156,7 +139,7 @@ async def epg(username: str, password: str):
 @app.get("/admin_auth")
 async def admin_auth(username: str, password: str):
     status = user.auth(username, password)
-    if status["error"] != 0:
+    if status["error"] is not 0:
         return {"status": status["error_code"], "error_info": status["error_message"]}
     hash = common.gen_hash(20)
     qb.update("users", {"auth_hash": hash}).where(
