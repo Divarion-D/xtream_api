@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 import requests
-import utils.iptv as iptv
+import helper.iptv as iptv
 
 m3u_obj = iptv.M3U_Parser("https://raw.githubusercontent.com/Divarion-D/xtream_api/master/tests/test.m3u")
 epg_obj = iptv.EPG_Parser()

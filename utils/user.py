@@ -1,8 +1,5 @@
 import bcrypt
-
-from utils.db import *
-
-qb = QueryBuilder(DataBase(), "data.db")
+from utils.common import qb
 
 
 def create_admin(username: str, password: str):

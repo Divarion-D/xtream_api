@@ -16,10 +16,8 @@ You should have received a copy of the GNU Lesser General Public License along
 with this software; if not, see <http://www.gnu.org/licenses/>.
 """
 
-import re
-import sys
-import types
-from xml.etree.cElementTree import Element, ElementTree, SubElement, tostring
+
+from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 # The Python-XMLTV version
 VERSION = "1.4.3"
@@ -243,7 +241,7 @@ def elem_to_programme(elem):
 def read_file(fp=None):
     """
     This function takes a file pointer and returns an ElementTree object
-    
+
     :param fp: The file path to the XML file
     :return: A list of dictionaries.
     """
@@ -286,7 +284,7 @@ def read_data(fp=None, tree=None):
 def read_channels(fp=None, tree=None):
     """
     It takes a tree and returns a generator that yields a channel for each channel element in the tree
-    
+
     :param tree: The ElementTree object to read the channels from
     :return: A generator object.
     """
@@ -425,7 +423,7 @@ class Writer:
         if element in programme:
             for item in programme[element]:
                 item = list(item.values())
-                
+
                 e = SubElement(p, element)
                 self.settext(e, item)
 
@@ -633,7 +631,7 @@ class Writer:
         # Display Name
         for display_name in channel["display-name"]:
             display_name = list(display_name.values())
-    
+
             dn = SubElement(c, "display-name")
             self.settext(dn, display_name)
 
@@ -818,12 +816,18 @@ if __name__ == "__main__":
 
     channels = [
         {
-            "display-name": [{'name': 'Звезда', 'lang': ''}, {'name': 'Звезда HD', 'lang': ''}],
+            "display-name": [
+                {"name": "Звезда", "lang": ""},
+                {"name": "Звезда HD", "lang": ""},
+            ],
             "id": "C10eltv.zap2it.com",
             "url": ["http://www.eastlink.ca/"],
         },
         {
-            "display-name": [{'name': 'dfgdfg', 'lang': 'en'}, {'name': 'dfgdfgdfg HD', 'lang': 'en'}],
+            "display-name": [
+                {"name": "dfgdfg", "lang": "en"},
+                {"name": "dfgdfgdfg HD", "lang": "en"},
+            ],
             "icon": [
                 {"src": "http://tvlistings2.zap2it.com/tms_network_logos/cbc.gif"}
             ],

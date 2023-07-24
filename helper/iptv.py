@@ -1,20 +1,21 @@
+import asyncio
 import datetime
 import gzip
 import os
 import re
 import time
+import urllib.error
+import urllib.parse
 import urllib.request
-import aiohttp
-import asyncio
+import urllib.response
 
+import aiohttp
 import requests
 
 import config as cfg
+import helper.xmltv as xmltv
 import utils.common as common
-import utils.xmltv as xmltv
-from utils.db import QueryBuilder, DataBase
-
-qb = QueryBuilder(DataBase(), "data.db")
+from utils.common import qb
 
 
 class M3U_Parser:
@@ -24,7 +25,7 @@ class M3U_Parser:
 
     async def upd_playlist(self):
         channels_lupd = common.get_setting_db("chenel_upd")
-        channels_lupd = int(channels_lupd) if channels_lupd is not "" else 0
+        channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
         if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_LIST:
             # clear channels
             qb.delete("iptv_channels")
@@ -38,9 +39,10 @@ class M3U_Parser:
         It takes a URL, makes a request to that URL, and returns the response as a list of strings
         :return: A list of strings
         """
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36"}
         timeout = 30
         try:
-            request = requests.get(self.m3u_url, timeout=timeout)
+            request = requests.get(self.m3u_url, timeout=timeout, headers=headers)
             if request.status_code == 200:
                 return request.text.splitlines()
             print("Error get m3u list")
@@ -85,9 +87,7 @@ class M3U_Parser:
             )
             # Get the epg channel id
             data_list["epg_channel_id"] = (
-                re.search('tvg-id="(.+?)"', line)[1].strip()
-                if "tvg-id" in line
-                else ""
+                re.search('tvg-id="(.+?)"', line)[1].strip() if "tvg-id" in line else ""
             )
             # Uncomment the following lines to get the other values
             # list["tvg_shift"] = re.search('tvg-shift="(.+?)"', line).group(1) if 'tvg-shift' in line else None
@@ -202,6 +202,9 @@ class M3U_Parser:
         channel = (
             qb.select("iptv_channels").where([["stream_id", "=", stream_id]]).one()
         )
+        if channel is None:
+            return None
+
         return channel["direct_source"]
 
 
@@ -215,7 +218,7 @@ class EPG_Parser:
 
     async def upd_epg(self):
         channels_lupd = common.get_setting_db("epg_upd")
-        channels_lupd = int(channels_lupd) if channels_lupd is not "" else 0
+        channels_lupd = int(channels_lupd) if channels_lupd != "" else 0
         if channels_lupd < int(time.time()) - cfg.IPTV_UPD_INTERVAL_EPG:
             await self.parse_xml()
             common.set_setting_bd("epg_upd", int(time.time()))
@@ -247,7 +250,12 @@ class EPG_Parser:
         """
         """Downloads epg files from given list of URLs"""
         opener = urllib.request.build_opener()
-        opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36')]
+        opener.addheaders = [
+            (
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1941.0 Safari/537.36",
+            )
+        ]
         urllib.request.install_opener(opener)
 
         epg_file = []
@@ -257,7 +265,9 @@ class EPG_Parser:
         for file in files:
             # Download file
             print(f"Downloading EPG file: {file}")
-            urllib.request.urlretrieve(file, os.path.join("./temp/epg", os.path.basename(file)))
+            urllib.request.urlretrieve(
+                file, os.path.join("./temp/epg", os.path.basename(file))
+            )
             file = os.path.join("./temp/epg", os.path.basename(file))
             # Unzip file if it is a .gz archive
             if file.split(".")[-1] == "gz":
@@ -285,7 +295,12 @@ class EPG_Parser:
             for chanel_name in channel["display-name"]:
                 if chanel_name["name"] == channel_db["name"]:
                     # Return the channel name, id, db and icon
-                    return chanel_name, channel["id"], channel_db, self._get_icon(channel["icon"])
+                    return (
+                        chanel_name,
+                        channel["id"],
+                        channel_db,
+                        self._get_icon(channel["icon"]),
+                    )
         # If no match is found, return None
         return None, None, None, None
 
@@ -314,10 +329,8 @@ class EPG_Parser:
         w = xmltv.Writer(
             encoding="us-ascii",
             date=date,
-            # source_info_url="http://www.funktronics.ca/python-xmltv",
-            # source_info_name="Funktronics",
-            # generator_info_name="python-xmltv",
-            # generator_info_url="http://www.funktronics.ca/python-xmltv",
+            generator_info_name="xtream-api",
+            # generator_info_url="http://myurl.ru/",
         )
         # Add channels to the writer
         for c in self.epg_channel:
@@ -336,7 +349,7 @@ class EPG_Parser:
         common.create_temp_folder()
         # Get the list of EPG files to be parsed
         files = await asyncio.to_thread(self.download_epg, cfg.IPTV_EPG_LIST_IN)
-        #files = ["./temp/epg/fnkuo.xml"]
+        # files = ["./temp/epg/fnkuo.xml"]
         # Get all channels from the database
         channels_db = qb.select("iptv_channels").all()
         # Iterate through each file
@@ -345,18 +358,25 @@ class EPG_Parser:
             # Read the channels and programmes from the file
             file_parsed = await asyncio.to_thread(xmltv.read_file, open(file, "r"))
             chanels = await asyncio.to_thread(xmltv.read_channels, None, file_parsed)
-            programmes = await asyncio.to_thread(xmltv.read_programmes, None, file_parsed)
+            programmes = await asyncio.to_thread(
+                xmltv.read_programmes, None, file_parsed
+            )
             print("Parsing channels...")
             # Iterate through each channel
             for channel in chanels:
                 # Parse the channel
-                chanel_name, channel_id, channel_db, icon = self.parse_channel(channel, channels_db)
+                chanel_name, channel_id, channel_db, icon = self.parse_channel(
+                    channel, channels_db
+                )
                 # If the channel is valid
                 if channel_id:
                     # Remove the data from the channels_db
                     channels_db.remove(channel_db)
                     # Update the channel in the database
-                    qb.update("iptv_channels", {"epg_channel_id": channel_id, "stream_icon": icon}).where([["name", "=", chanel_name["name"]]]).go()
+                    qb.update(
+                        "iptv_channels",
+                        {"epg_channel_id": channel_id, "stream_icon": icon},
+                    ).where([["name", "=", chanel_name["name"]]]).go()
                     # Append the channel to the epg_channel list
                     self.epg_channel.append(channel)
                     # Append the channel_id to the epg_channel_id list
@@ -365,7 +385,7 @@ class EPG_Parser:
             # Parse the programmes
             self.parse_programme(programmes)
             # Remove epg files
-            os.remove(os.path.join("./temp/epg", os.path.basename(file)))
+            os.remove(file)
         print("Writing XML file...")
         # Write the EPG file
         self.write_epg()

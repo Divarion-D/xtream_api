@@ -1,4 +1,4 @@
-import utils.xmltv as xmltv
+import helper.xmltv as xmltv
 
 # If you need to change the locale:
 xmltv.locale = "Latin-1"

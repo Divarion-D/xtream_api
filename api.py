@@ -1,18 +1,20 @@
+import asyncio
+import time
+from concurrent.futures import ProcessPoolExecutor
 from typing import Union
 
 import uvicorn
-import time
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
-from concurrent.futures import ProcessPoolExecutor
 
+import config as cfg
+import helper.xmltv as xmltv
 import utils.common as common
 import utils.user as user
 import utils.video as video
-from utils.db import QueryBuilder, DataBase
-from utils.iptv import Help_iptv, M3U_Parser, EPG_Parser
-import config as cfg
-import asyncio
+from helper.clients import Client
+from helper.db import DataBase, QueryBuilder
+from helper.iptv import EPG_Parser, Help_iptv, M3U_Parser
 
 qb = QueryBuilder(DataBase(), "data.db")
 common.add_tables()
@@ -29,6 +31,7 @@ tvepg = EPG_Parser()
 
 app = FastAPI()
 
+CLIENT = Client()
 
 def update():
     while True:
@@ -89,7 +92,8 @@ async def api(username: str, password: str, action: Union[str, None] = None):
 
 
 @app.get("/live/{username}/{password}/{stream_id}.{ext}")
-async def live(username: str, password: str, stream_id: str, request: Request, response: Response):
+async def live(username: str, password: str, stream_id: str, ext: str, request: Request, response: Response):
+    print("live")
     user_data = user.auth(username, password)
     if user_data["error"] == 1:
         # return status code
@@ -97,15 +101,31 @@ async def live(username: str, password: str, stream_id: str, request: Request, r
             status_code=user_data["error_code"], detail=f"{user_data['error_message']}"
         )
 
-    url = iptv_data.get_channel_url(stream_id)
-    response = StreamingResponse(Help_iptv.receive_stream(url), media_type="video/mp2t")
-    response.set_cookie(key="channel_path", value=url)
+    stream_url = iptv_data.get_channel_url(stream_id)
+    if stream_url is None:
+        stream_url = CLIENT.get_client(request.client.host, str(request.client.port))
+        if stream_url is not False:
+            stream_url = stream_url.replace(stream_url.split("/")[-1], "")
+            stream_url = stream_url + stream_id + "." + ext
+            query_param = request.query_params._dict
+            if query_param:
+                for key, value in query_param.items():
+                    stream_url += "?" + key + "=" + value
+    else:
+        CLIENT.remove_client()
+
+    if stream_url is False:
+        raise HTTPException(status_code=404, detail="Stream not found")
+
+    CLIENT.add_client(request.client.host, str(request.client.port), stream_url)
+    response = StreamingResponse(Help_iptv.receive_stream(stream_url), media_type="video/mp2t")
     return response
 
 
 @app.get("/live/{username}/{password}/{file_path:path}")
 # A crutch for the work of an incomplete link to a list with video containers
-async def live(username: str, password: str, file_path: str, request: Request):
+async def live_container(username: str, password: str, file_path: str, request: Request):
+    print("container")
     user_data = user.auth(username, password)
     if user_data["error"] == 1:
         # return status code
@@ -113,10 +133,11 @@ async def live(username: str, password: str, file_path: str, request: Request):
             status_code=user_data["error_code"], detail=f"{user_data['error_message']}"
         )
 
-    channel_path = request.cookies.get("channel_path")
-    channel_path = channel_path.replace(channel_path.split("/")[-1], "")
-    url = channel_path + file_path
-    return StreamingResponse(Help_iptv.receive_stream(url), media_type="video/mp2t")
+    stream_url = CLIENT.get_client(request.client.host, str(request.client.port))
+    stream_url = stream_url.replace(stream_url.split("/")[-1], "")
+    stream_url = stream_url + file_path
+
+    return StreamingResponse(Help_iptv.receive_stream(stream_url), media_type="video/mp2t")
 
 
 @app.get("/xmltv.php")
@@ -139,7 +160,7 @@ async def epg(username: str, password: str):
 @app.get("/admin_auth")
 async def admin_auth(username: str, password: str):
     status = user.auth(username, password)
-    if status["error"] is not 0:
+    if status["error"] != 0:
         return {"status": status["error_code"], "error_info": status["error_message"]}
     hash = common.gen_hash(20)
     qb.update("users", {"auth_hash": hash}).where(
@@ -156,4 +177,4 @@ if __name__ == "__main__":
     ip = cfg.SERVER_IP
     port = cfg.SERVER_PORT
 
-    uvicorn.run("api:app", host=ip, port=int(port), debug=True, reload=True)
+    uvicorn.run("api:app", host=ip, port=int(port), log_level=cfg.LOG_LEVEL, reload=True)

@@ -2,8 +2,10 @@
 SERVER_IP = "127.0.0.1"  # server ip
 SERVER_PORT = 8055  # server port
 
+LOG_LEVEL = "info"  # log level
+
 # IPTV config
-IPTV_LIST_URL = "https://iptvlist.ru/ru2.m3u"  # url to m3u playlist
+IPTV_LIST_URL = "https://iptvlist.ru/ru.m3u"  # url to m3u playlist
 IPTV_EPG_LIST_IN = [
     "http://programtv.ru/xmltv.xml.gz",
     "http://epg.it999.ru/epg2.xml.gz"

@@ -26,7 +26,7 @@ class DataBase(metaclass=MetaSingleton):
     cursor = None
 
     def connect(self, db_name=""):
-        if db_name is not "":
+        if db_name != "":
             self.db_name = db_name
 
         if self.conn is None:
@@ -52,22 +52,9 @@ class QueryBuilder:
         "IN",
         "NOT IN",
     ]
-    _LOGICS: list = [
-        "AND",
-        "OR",
-        "NOT"
-    ]
-    _SORT_TYPES: list = [
-        "ASC",
-        "DESC"
-    ]
-    _JOIN_TYPES: list = [
-        "INNER",
-        "LEFT OUTER",
-        "RIGHT OUTER",
-        "FULL OUTER",
-        "CROSS"
-    ]
+    _LOGICS: list = ["AND", "OR", "NOT"]
+    _SORT_TYPES: list = ["ASC", "DESC"]
+    _JOIN_TYPES: list = ["INNER", "LEFT OUTER", "RIGHT OUTER", "FULL OUTER", "CROSS"]
     _NO_FETCH: int = 0
     _FETCH_ONE: int = 1
     _FETCH_ALL: int = 2
@@ -84,7 +71,13 @@ class QueryBuilder:
     _count: int = -1
     _params: tuple = ()
 
-    def __init__(self, database: DataBase, db_name: str = "", result_dict: bool = True, print_errors: bool = False) -> None:
+    def __init__(
+        self,
+        database: DataBase,
+        db_name: str = "",
+        result_dict: bool = True,
+        print_errors: bool = False,
+    ) -> None:
         self._conn = database.connect(db_name)
         self._print_errors = print_errors
         self._set_row_factory(result_dict)
@@ -98,7 +91,13 @@ class QueryBuilder:
                 [(col[0], r[idx]) for idx, col in enumerate(c.description)]
             )
 
-    def query(self, sql: str = "", params: tuple = (), fetch: int = 2, column: Union[str, int] = 0):
+    def query(
+        self,
+        sql: str = "",
+        params: tuple = (),
+        fetch: int = 2,
+        column: Union[str, int] = 0,
+    ):
         if fetch == 2:
             fetch = self._FETCH_ALL
 
@@ -145,7 +144,7 @@ class QueryBuilder:
         new_sql = sql or self._sql
 
         if new_sql:
-            new_sql += ";" if new_sql[-1] is not ";" else ""
+            new_sql += ";" if new_sql[-1] != ";" else ""
 
         if not sql:
             self._sql = new_sql
@@ -208,8 +207,12 @@ class QueryBuilder:
         return self._cur.lastrowid
 
     def column(self, column: Union[str, int] = 0):
-        if (self._result_dict and isinstance(column, int)) or (not self._result_dict and isinstance(column, str)):
-            self.set_error(f"Incorrect type of column in {inspect.stack()[0][3]} method. Result dict is {self._result_dict}")
+        if (self._result_dict and isinstance(column, int)) or (
+            not self._result_dict and isinstance(column, str)
+        ):
+            self.set_error(
+                f"Incorrect type of column in {inspect.stack()[0][3]} method. Result dict is {self._result_dict}"
+            )
             return self
 
         self.query("", (), self._FETCH_COLUMN, column)
@@ -217,11 +220,13 @@ class QueryBuilder:
 
     def pluck(self, key: Union[str, int] = 0, column: Union[str, int] = 1):
         if (
-                self._result_dict and (isinstance(key, int) or isinstance(column, int))
-            ) or (
-                not self._result_dict and (isinstance(key, str) or isinstance(column, str))
-            ):
-            self.set_error(f"Incorrect type of key or column in {inspect.stack()[0][3]} method. Result dict is {self._result_dict}")
+            self._result_dict and (isinstance(key, int) or isinstance(column, int))
+        ) or (
+            not self._result_dict and (isinstance(key, str) or isinstance(column, str))
+        ):
+            self.set_error(
+                f"Incorrect type of key or column in {inspect.stack()[0][3]} method. Result dict is {self._result_dict}"
+            )
             return self
 
         self.query()
@@ -251,7 +256,9 @@ class QueryBuilder:
         result = self.one()
         return self._count > 0
 
-    def _prepare_aliases(self, items: Union[str, list, dict], as_list: bool = False) -> Union[str, list]:
+    def _prepare_aliases(
+        self, items: Union[str, list, dict], as_list: bool = False
+    ) -> Union[str, list]:
         if not items:
             self.set_error(f"Empty items in {inspect.stack()[0][3]} method")
             return ""
@@ -274,7 +281,9 @@ class QueryBuilder:
                         )
                 elif isinstance(items, dict):
                     new_item = items[item]
-                    sql.append(new_item if isinstance(item, int) else f"{new_item} AS {item}")
+                    sql.append(
+                        new_item if isinstance(item, int) else f"{new_item} AS {item}"
+                    )
         else:
             self.set_error(f"Incorrect type of items in {inspect.stack()[0][3]} method")
             return ""
@@ -282,10 +291,7 @@ class QueryBuilder:
         return sql if as_list else self._prepare_fieldlist(sql)
 
     def _prepare_conditions(self, where: Union[str, list]) -> dict:
-        result = {
-            "sql": "",
-            "values": []
-        }
+        result = {"sql": "", "values": []}
         sql = ""
 
         if not where:
@@ -321,9 +327,7 @@ class QueryBuilder:
                         operator = cond[1].upper()
                         value = cond[2]
                         if operator in self._OPERATORS:
-                            if operator == "IN" and (
-                                isinstance(value, (list, tuple))
-                            ):
+                            if operator == "IN" and (isinstance(value, (list, tuple))):
                                 values = ("?," * len(value)).rstrip(",")
                                 sql += f"({field} {operator} ({values}))"
                                 for item in value:
@@ -353,13 +357,17 @@ class QueryBuilder:
         if isinstance(fields, (dict, list, str)):
             self._sql = f"SELECT {self._prepare_aliases(fields)}"
         else:
-            self.set_error(f"Incorrect type of fields in {inspect.stack()[0][3]} method. Fields must be String, List or Dictionary")
+            self.set_error(
+                f"Incorrect type of fields in {inspect.stack()[0][3]} method. Fields must be String, List or Dictionary"
+            )
             return self
 
         if isinstance(table, (dict, str)):
             self._sql += f" FROM {self._prepare_aliases(table)}"
         else:
-            self.set_error(f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary")
+            self.set_error(
+                f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary"
+            )
             return self
 
         return self
@@ -528,7 +536,9 @@ class QueryBuilder:
         if isinstance(table, (dict, str)):
             table = self._prepare_aliases(table)
         else:
-            self.set_error(f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary")
+            self.set_error(
+                f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary"
+            )
             return self
 
         self.reset()
@@ -544,7 +554,9 @@ class QueryBuilder:
         if isinstance(table, (dict, str)):
             table = self._prepare_aliases(table)
         else:
-            self.set_error(f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary")
+            self.set_error(
+                f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary"
+            )
             return self
 
         self.reset()
@@ -571,7 +583,9 @@ class QueryBuilder:
                     params.extend(iter(item))
             self._params = tuple(params)
         else:
-            self.set_error(f"Incorrect type of fields in {inspect.stack()[0][3]} method. Fields must be String, List or Dictionary")
+            self.set_error(
+                f"Incorrect type of fields in {inspect.stack()[0][3]} method. Fields must be String, List or Dictionary"
+            )
             return self
 
         return self
@@ -584,14 +598,18 @@ class QueryBuilder:
         if isinstance(table, (dict, str)):
             table = self._prepare_aliases(table)
         else:
-            self.set_error(f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary")
+            self.set_error(
+                f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary"
+            )
             return self
 
         if isinstance(fields, (list, dict)):
             sets = "".join(f" {self._prepare_field(item)} = ?," for item in fields)
             sets = sets.rstrip(",")
         else:
-            self.set_error(f"Incorrect type of fields in {inspect.stack()[0][3]} method. Fields must be String, List or Dictionary")
+            self.set_error(
+                f"Incorrect type of fields in {inspect.stack()[0][3]} method. Fields must be String, List or Dictionary"
+            )
             return self
 
         self.reset()
@@ -601,10 +619,17 @@ class QueryBuilder:
 
         return self
 
-    def join(self, table: Union[str, dict] = "", on: Union[str, tuple, list] = (), join_type: str = "INNER"):
+    def join(
+        self,
+        table: Union[str, dict] = "",
+        on: Union[str, tuple, list] = (),
+        join_type: str = "INNER",
+    ):
         join_type = join_type.upper()
         if not join_type or join_type not in self._JOIN_TYPES:
-            self.set_error(f"Empty join_type or is not allowed in {inspect.stack()[0][3]} method")
+            self.set_error(
+                f"Empty join_type or is not allowed in {inspect.stack()[0][3]} method"
+            )
             return self
 
         if not table:
@@ -614,7 +639,9 @@ class QueryBuilder:
         if isinstance(table, (dict, str)):
             self._sql += f" {join_type} JOIN {self._prepare_aliases(table)}"
         else:
-            self.set_error(f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary")
+            self.set_error(
+                f"Incorrect type of table in {inspect.stack()[0][3]} method. Table must be String or Dictionary"
+            )
             return self
 
         if on:
@@ -625,7 +652,9 @@ class QueryBuilder:
             elif isinstance(on, str):
                 self._sql += f" ON {on}"
             else:
-                self.set_error(f"Incorrect type of on in {inspect.stack()[0][3]} method. On must be String, Tuple or List")
+                self.set_error(
+                    f"Incorrect type of on in {inspect.stack()[0][3]} method. On must be String, Tuple or List"
+                )
                 return self
 
         self.set_error()
