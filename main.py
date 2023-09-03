@@ -8,7 +8,6 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
 import config as cfg
-import helper.xmltv as xmltv
 import utils.common as common
 import utils.user as user
 import utils.video as video
@@ -32,6 +31,7 @@ tvepg = EPG_Parser()
 app = FastAPI()
 
 CLIENT = Client()
+
 
 def update():
     while True:
