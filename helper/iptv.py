@@ -202,10 +202,7 @@ class M3U_Parser:
         channel = (
             qb.select("iptv_channels").where([["stream_id", "=", stream_id]]).one()
         )
-        if channel is None:
-            return None
-
-        return channel["direct_source"]
+        return None if channel is None else channel["direct_source"]
 
 
 class EPG_Parser:

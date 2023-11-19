@@ -107,10 +107,9 @@ async def live(username: str, password: str, stream_id: str, ext: str, request: 
         if stream_url is not False:
             stream_url = stream_url.replace(stream_url.split("/")[-1], "")
             stream_url = stream_url + stream_id + "." + ext
-            query_param = request.query_params._dict
-            if query_param:
+            if query_param := request.query_params._dict:
                 for key, value in query_param.items():
-                    stream_url += "?" + key + "=" + value
+                    stream_url += f"?{key}={value}"
     else:
         CLIENT.remove_client()
 
