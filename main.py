@@ -176,4 +176,4 @@ if __name__ == "__main__":
     ip = cfg.SERVER_IP
     port = cfg.SERVER_PORT
 
-    uvicorn.run("api:app", host=ip, port=int(port), log_level=cfg.LOG_LEVEL, reload=True)
+    uvicorn.run("main:app", host=ip, port=int(port), log_level=cfg.LOG_LEVEL, reload=True)
