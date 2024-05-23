@@ -29,7 +29,7 @@ Open config.py and fill in the fields
 ## Step 3: Run the application
 
 ```
-python3 api.py
+python3 main.py
 ```
 
 ## Step 4: Create an administrator account
