@@ -4,3 +4,4 @@ bcrypt==4.0.0
 requests==2.32.0
 uvicorn==0.13.3
 starlette>=0.27.0 # not directly required, pinned by Snyk to avoid a vulnerability
+anyio>=4.4.0 # not directly required, pinned by Snyk to avoid a vulnerability
