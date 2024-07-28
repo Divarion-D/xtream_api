@@ -1,5 +1,7 @@
 # XTREAM API
 
+### I have no desire to continue with this project. The project is officially abandoned
+
 # What is this application for? 
 
 This application is needed to work as an xtream server API.
