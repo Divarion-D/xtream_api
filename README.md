@@ -1,6 +1,6 @@
 # XTREAM API
 
-### I have no desire to continue with this project. The project is officially abandoned
+### I have no desire to continue with this project. The project is officially abandoned. Continuation of the [project](https://github.com/Vateron-Media/XC_VM)
 
 # What is this application for? 
 
